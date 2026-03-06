@@ -1,4 +1,4 @@
-# 🤖 Agent Skills for AI/ML Professionals
+# 🤖 Agent Skills 
 
 A collection of **Agentic Skills** designed to help engineers and AI practitioners bridge the cultural and technical gaps required to land high-paying, remote roles at US-funded startups.
 
