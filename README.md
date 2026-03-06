@@ -21,7 +21,7 @@ curl -fsSL https://raw.githubusercontent.com/bhaktofmahakal/agent-skills/main/sk
 Install selected skills into the current project:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/bhaktofmahakal/agent-skills/main/skills.sh | bash -s -- install --mode project --skills fynt-landing-design,fynt-workflow-platform-core
+curl -fsSL https://raw.githubusercontent.com/bhaktofmahakal/agent-skills/main/skills.sh | bash -s -- install --mode project --skills landing-design,workflow-platform-core
 ```
 
 Use local clone (recommended for private/confidential repos):
@@ -40,13 +40,13 @@ bash skills.sh install --mode global --all
 2. `social-presence-optimizer`
 3. `applied-ai-project-coach`
 
-### Fynt Platform Skill Stack (Phase 1-5)
+### Platform Skill Stack (Phase 1-5)
 
-1. `fynt-landing-design`
-2. `fynt-workflow-platform-core`
-3. `fynt-workflow-engine-runtime`
-4. `fynt-builder-workspace`
-5. `fynt-platform-production-hardening`
+1. `landing-design`
+2. `workflow-platform-core`
+3. `workflow-engine-runtime`
+4. `builder-workspace`
+5. `platform-production-hardening`
 
 ## `skills.sh` Usage
 
@@ -65,7 +65,7 @@ bash skills.sh install --mode global --all
 Install specific skills:
 
 ```bash
-bash skills.sh install --mode project --skills fynt-landing-design,fynt-builder-workspace
+bash skills.sh install --mode project --skills landing-design,builder-workspace
 ```
 
 Overwrite existing installs:

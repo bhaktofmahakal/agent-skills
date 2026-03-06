@@ -44,7 +44,7 @@ Usage:
 Examples:
   skills.sh list
   skills.sh install --mode global --all
-  skills.sh install --mode project --skills fynt-landing-design,fynt-workflow-platform-core
+  skills.sh install --mode project --skills landing-design,workflow-platform-core
   skills.sh install --mode project --project-root /path/to/app --all
 
 Notes:
