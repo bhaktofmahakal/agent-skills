@@ -51,6 +51,6 @@ Once installed, your AI agent (like Claude Code or any `skills.sh` compatible ag
 
 Created by **[Utsav Mishra](https://github.com/bhaktofmahakal)**.
 
-If you have feedback or want to suggest new skills, feel free to open an issue or reach out on [Twitter/X](#) or [LinkedIn](#).
+If you have feedback or want to suggest new skills, feel free to open an issue or reach out on [Twitter/X](https://x.com/Utsav_mishraa) or [LinkedIn](https://www.linkedin.com/in/utsav-mishra1/).
 
 Let's ship. 🚀
