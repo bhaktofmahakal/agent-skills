@@ -4,7 +4,7 @@ Reusable skills for coding agents (Codex, Claude Code, Copilot-style setups).
 
 ## Quick Install
 
-Install from GitHub (public repo):
+Install from GitHub :
 
 ```bash
 npx skills add bhaktofmahakal/agent-skills
