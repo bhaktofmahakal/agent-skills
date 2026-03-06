@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fynt Builder Workspace"
+  short_description: "Build-run-observe workspace UX patterns"
+  default_prompt: "Use $fynt-builder-workspace mode=adapt to design a production workspace UX with split panes, command surfaces, realtime status feedback, and resilient fallback states."

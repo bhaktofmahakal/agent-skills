@@ -1,56 +1,81 @@
-# 🤖 Agent Skills 
+﻿# Agent Skills
 
-A collection of **Agentic Skills** designed to help engineers and AI practitioners bridge the cultural and technical gaps required to land high-paying, remote roles at US-funded startups.
+Reusable skills for coding agents (Codex, Claude Code, Copilot-style setups).
 
-## 🚀 Quick Install
+## Quick Install
 
-Add these capabilities to your AI agent in one command:
+Install from GitHub (public repo):
 
 ```bash
 npx skills add bhaktofmahakal/agent-skills
 ```
 
----
+## Direct `skills.sh` Install
 
-## 🧠 Contained Skills
+Install all skills globally:
 
-### 1. 💼 us-startup-hiring-coach
-**Focus:** Mindset & Cultural Gap Bridging.
-- Audits resumes for "instruction-dependency."
-- Coaches on "professional disagreement" and "direct communication."
-- Provides 3+ cold email templates that actually get replies.
-- Prepares you for low-theoretical, high-impact technical interviews.
+```bash
+curl -fsSL https://raw.githubusercontent.com/bhaktofmahakal/agent-skills/main/skills.sh | bash -s -- install --mode global --all
+```
 
-### 2. 🏘️ social-presence-optimizer
-**Focus:** Visibility & Risk Reduction.
-- Transforms your LinkedIn from a resume into a "Value Proposition."
-- Optimizes GitHub profiles for "Judgment and Production Thinking."
-- Implements a "Build in Public" strategy for Twitter/X.
-- 30-day launch plan to increase inbound opportunity flow.
+Install selected skills into the current project:
 
-### 🏗️ 3. applied-ai-project-coach
-**Focus:** Proof of Work & Production Engineering.
-- Guides you through the **6-Phase Production Pipeline**.
-- Aggressively flags the **15 Fatal Project Mistakes**.
-- Helps architecture reviews (FastAPI, Docker, Drift Monitoring, Baselines).
-- Templates for E2E Pipelines, Real-Time APIs, and Domain-Specific Apps.
+```bash
+curl -fsSL https://raw.githubusercontent.com/bhaktofmahakal/agent-skills/main/skills.sh | bash -s -- install --mode project --skills fynt-landing-design,fynt-workflow-platform-core
+```
 
----
+Use local clone (recommended for private/confidential repos):
 
-## 🛠️ Usage
+```bash
+git clone https://github.com/bhaktofmahakal/agent-skills.git
+cd agent-skills
+bash skills.sh install --mode global --all
+```
 
-Once installed, your AI agent (like Claude Code or any `skills.sh` compatible agent) will have internal access to these frameworks. Simply ask your agent:
+## Available Skills
 
-- *"Review my resume using the us-startup-hiring-coach skill."*
-- *"Help me design a production-grade AI project for a local business."*
-- *"Audit my LinkedIn bio using the social-presence-optimizer."*
+### Career and Positioning
 
----
+1. `us-startup-hiring-coach`
+2. `social-presence-optimizer`
+3. `applied-ai-project-coach`
 
-## 🤝 Contribution & Feedback
+### Fynt Platform Skill Stack (Phase 1-5)
 
-Created by **[Utsav Mishra](https://github.com/bhaktofmahakal)**.
+1. `fynt-landing-design`
+2. `fynt-workflow-platform-core`
+3. `fynt-workflow-engine-runtime`
+4. `fynt-builder-workspace`
+5. `fynt-platform-production-hardening`
 
-If you have feedback or want to suggest new skills, feel free to open an issue or reach out on [Twitter/X](https://x.com/Utsav_mishraa) or [LinkedIn](https://www.linkedin.com/in/utsav-mishra1/).
+## `skills.sh` Usage
 
-Let's ship. 🚀
+List skills from repo:
+
+```bash
+bash skills.sh list
+```
+
+Install all skills:
+
+```bash
+bash skills.sh install --mode global --all
+```
+
+Install specific skills:
+
+```bash
+bash skills.sh install --mode project --skills fynt-landing-design,fynt-builder-workspace
+```
+
+Overwrite existing installs:
+
+```bash
+bash skills.sh install --mode global --all --force
+```
+
+## Confidentiality Guidance
+
+- If skills contain proprietary architecture, prompts, or business logic, keep the repo **private**.
+- Public GitHub is fine only for non-sensitive/open-source skill packs.
+- For private repos, prefer local clone + `skills.sh`, or authenticated installs with token/SSH.

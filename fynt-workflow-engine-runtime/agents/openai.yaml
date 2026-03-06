@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fynt Workflow Engine Runtime"
+  short_description: "n8n-style engine and node runtime architecture"
+  default_prompt: "Use $fynt-workflow-engine-runtime mode=adapt to design or upgrade a production-ready workflow engine with typed node contracts, safe executors, scheduler dedupe, and realtime run status propagation."

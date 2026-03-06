@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fynt Platform Production Hardening"
+  short_description: "Auth, security, runtime, and reliability hardening patterns"
+  default_prompt: "Use $fynt-platform-production-hardening mode=adapt to design or upgrade a workflow platform for production readiness across auth, security, runtime guards, queue/realtime reliability, and deployment operations."

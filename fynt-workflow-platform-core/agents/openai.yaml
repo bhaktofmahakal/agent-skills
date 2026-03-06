@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fynt Workflow Platform Core"
+  short_description: "Post-auth dashboard and workflow runtime patterns"
+  default_prompt: "Use $fynt-workflow-platform-core mode=adapt to design and implement an authenticated workflow automation platform surface with reliable execution APIs, queue flow, and realtime status."

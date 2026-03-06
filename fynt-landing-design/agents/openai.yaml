@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fynt Landing Design"
+  short_description: "Fynt-style landing design and frontend upgrades"
+  default_prompt: "Use $fynt-landing-design mode=adapt to build a polished SaaS landing page with strong SVG and motion systems."
