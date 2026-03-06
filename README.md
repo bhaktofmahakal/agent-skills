@@ -73,9 +73,3 @@ Overwrite existing installs:
 ```bash
 bash skills.sh install --mode global --all --force
 ```
-
-## Confidentiality Guidance
-
-- If skills contain proprietary architecture, prompts, or business logic, keep the repo **private**.
-- Public GitHub is fine only for non-sensitive/open-source skill packs.
-- For private repos, prefer local clone + `skills.sh`, or authenticated installs with token/SSH.
