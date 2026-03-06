@@ -33,8 +33,6 @@ A valid project must pass this criteria checklist:
    - What's the deployment scenario? (Batch, Real-time API, Streaming).
 
 ### 4 Categories of Winning Projects:
-- **Local Business Problems:** Demand forecasting for a local restaurant, inventory optimization, appointment no-show prediction.
-- **Personal Pain Points:** Job application tracker with outcome prediction, budget forecasting.
 - **Recreate Real Systems:** Rebuild YouTube thumbnail click prediction or Spotify playlist generation.
 - **Domain-Specific Apps:** Patient readmission risk (Healthcare), Credit default fairness (Finance), Search ranking (E-commerce).
 
