@@ -48,6 +48,10 @@ bash skills.sh install --mode global --all
 4. `builder-workspace`
 5. `platform-production-hardening`
 
+### Agent Development
+
+1. `master-system` - Complete system specification
+
 ## `skills.sh` Usage
 
 List skills from repo:
