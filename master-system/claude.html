@@ -1,0 +1,3050 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Reverse-Engineering Claude Code: A Deep Dive into Anthropic’s AI-Powered CLI | hi i’m sathwick.</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Reverse-Engineering Claude Code: A Deep Dive into Anthropic’s AI-Powered CLI" />
+<meta name="author" content="sathwick.p7@gmail.com" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="An exhaustive technical analysis of the architecture, systems, and engineering behind Claude Code — Anthropic’s flagship developer tool." />
+<meta property="og:description" content="An exhaustive technical analysis of the architecture, systems, and engineering behind Claude Code — Anthropic’s flagship developer tool." />
+<link rel="canonical" href="https://sathwick.xyz/blog/claude-code.html" />
+<meta property="og:url" content="https://sathwick.xyz/blog/claude-code.html" />
+<meta property="og:site_name" content="hi i’m sathwick." />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2026-03-31T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Reverse-Engineering Claude Code: A Deep Dive into Anthropic’s AI-Powered CLI" />
+<meta name="google-site-verification" content="hz4d604M-RCYPVBZQQhvBmfD5rd-ooO9QlclGJCCfUw" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"sathwick.p7@gmail.com"},"dateModified":"2026-03-31T00:00:00+00:00","datePublished":"2026-03-31T00:00:00+00:00","description":"An exhaustive technical analysis of the architecture, systems, and engineering behind Claude Code — Anthropic’s flagship developer tool.","headline":"Reverse-Engineering Claude Code: A Deep Dive into Anthropic’s AI-Powered CLI","mainEntityOfPage":{"@type":"WebPage","@id":"https://sathwick.xyz/blog/claude-code.html"},"url":"https://sathwick.xyz/blog/claude-code.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://sathwick.xyz/feed.xml" title="hi i&apos;m sathwick." /><script>
+if(!(window.doNotTrack === "1" || navigator.doNotTrack === "1" || navigator.doNotTrack === "yes" || navigator.msDoNotTrack === "1")) {
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'G-4PW08EK754', 'auto');
+  ga('send', 'pageview');
+}
+</script>
+  
+<style>
+    /* Remove Minima default top border gap */
+    .site-header { border-top: none; }
+  </style>
+</head>
+<body><style>
+    .blog-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-left h1 {
+        margin: 0;
+        font-size: 24px;
+    }
+
+    .header-right a {
+        margin-left: 15px;
+        color: #333;
+    }
+
+    .blog-header a:hover {
+        color: #0077cc;
+    }
+</style>
+
+<header class="site-header" role="banner">
+
+  <div class="wrapper"><div class="blog-header">
+        <div class="header-left">
+            <h1>
+                <a class="site-title" rel="author" href="/">hi i&#39;m sathwick.</a>
+            </h1>
+        </div>
+        <div class="header-right">
+            <a href="/about/">About</a>
+            <a href="/tags/">Tags</a>
+            <a href="https://github.com/sathwick-p" target="_blank">GitHub</a>
+            <a href="https://x.com/saxwick" target="_blank">Twitter</a>
+            <a href="/feed.xml" title="RSS Feed">RSS</a>
+        </div>
+    </div>
+
+  </div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <link rel="stylesheet" href="/assets/fonts/style.css">
+
+<style>
+    html,
+    body {
+        font-family: 'Minion 3', serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    th {
+        padding: unset !important;
+    }
+
+    table {
+        margin-bottom: 15px;
+    }
+
+    code {
+        font-family: 'Source Code Pro', monospace;
+    }
+
+    blockquote {
+        font-style: normal;
+        letter-spacing: normal;
+    }
+
+    ol {
+        margin-top: -0.75em !important;
+        margin-block-end: 0.5em !important;
+    }
+
+    #scrollTop {
+        display: none;
+        position: fixed;
+        bottom: 90px;
+        right: 30px;
+        z-index: 100;
+        font-size: 18px;
+        border: none;
+        outline: none;
+        background-color: #333;
+        color: white;
+        cursor: pointer;
+        padding: 8px 14px;
+        border-radius: 50%;
+        transition: background-color 0.3s;
+    }
+
+    #scrollTop:hover {
+        background-color: #555;
+    }
+
+    #scrollBottom {
+        display: none;
+        position: fixed;
+        bottom: 40px;
+        right: 30px;
+        z-index: 100;
+        font-size: 18px;
+        border: none;
+        outline: none;
+        background-color: #333;
+        color: white;
+        cursor: pointer;
+        padding: 8px 14px;
+        border-radius: 50%;
+        transition: background-color 0.3s;
+    }
+
+    #scrollBottom:hover {
+        background-color: #555;
+    }
+
+    .footer-col-3 {
+        text-align: right !important;
+    }
+
+    .post-clap {
+        display: flex;
+        justify-content: center;
+        margin: 2.5rem 0 1rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e8e8e8;
+    }
+
+    .clap-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 8px;
+        transition: transform 0.15s ease;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .clap-btn:active {
+        transform: scale(1.2);
+    }
+
+    .clap-btn.clapped {
+        cursor: default;
+    }
+
+    .clap-btn svg {
+        width: 36px;
+        height: 36px;
+    }
+
+    .clap-count {
+        font-family: 'Source Code Pro', monospace;
+        font-size: 0.85rem;
+        color: #888;
+    }
+
+    .clap-btn.clapped .clap-count {
+        color: #333;
+    }
+
+    .post-comments {
+        margin: 2rem 0 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e8e8e8;
+    }
+
+    .site-header {
+        margin-top: 0;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+
+    .page-content {
+        padding-top: 1.5rem;
+    }
+
+    .post-header {
+        margin-top: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .post-title {
+        font-size: 2.25rem;
+        line-height: 1.2;
+        margin: 0 0 0.4rem 0;
+    }
+
+    .post-description {
+        margin: 0;
+        color: #666;
+        font-size: 1.05rem;
+    }
+
+    .post-meta {
+        margin: 0.4rem 0 0 0;
+        color: #888;
+        font-size: 0.9rem;
+    }
+
+    .post-tags {
+        display: inline;
+    }
+
+    .post-tags a {
+        color: #888;
+        text-decoration: none;
+        font-size: 0.85rem;
+    }
+
+    .post-tags a:hover {
+        color: #1a5fb4;
+        text-decoration: underline;
+    }
+
+    .post-toc {
+        margin: 1.5rem 0 2rem;
+        padding: 0;
+        background: none;
+        border: none;
+        border-radius: 0;
+    }
+
+    .post-toc h2 {
+        margin: 0 0 0.6rem 0;
+        font-size: 1.4rem;
+    }
+
+    .post-toc ul {
+        margin: 0;
+        padding-left: 1.2rem;
+    }
+
+    .post-toc li {
+        margin: 0.35rem 0;
+    }
+
+    .post-toc li.toc-level-3 {
+        margin-left: 1rem;
+        font-size: 0.95em;
+        list-style-type: circle;
+    }
+
+    .post-toc li {
+        color: #111;
+    }
+
+    .post-toc a {
+        color: #1a5fb4;
+        text-decoration: none;
+    }
+
+    .post-toc a:hover {
+        text-decoration: underline;
+    }
+
+    .post-content p,
+    .post-content li,
+    .post-content blockquote,
+    .post-content td,
+    .post-content th {
+        font-size: 1.0625rem;
+    }
+
+    .post-content img {
+        display: block;
+        margin: 1.5rem auto;
+        max-width: min(100%, 720px);
+        height: auto;
+    }
+
+    .post-content blockquote.twitter-tweet,
+    .post-content .twitter-tweet,
+    .post-content .twitter-tweet-rendered {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        max-width: 560px;
+    }
+
+    .post-content .twitter-tweet iframe,
+    .post-content .twitter-tweet-rendered iframe {
+        width: 100% !important;
+        max-width: 560px !important;
+    }
+
+    .heading-link {
+        color: inherit;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .heading-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Definition tooltip system */
+    .define {
+        border-bottom: 1px dotted #1a5fb4;
+        cursor: help;
+        position: relative;
+    }
+
+    .define-tooltip {
+        position: absolute;
+        bottom: calc(100% + 10px);
+        left: 50%;
+        transform: translateX(-50%);
+        width: max-content;
+        max-width: 320px;
+        background: #fafafa;
+        border: 1px solid #e8e8e8;
+        border-radius: 4px;
+        padding: 12px 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 180ms ease, visibility 180ms ease;
+        pointer-events: none;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        font-family: 'Minion 3', serif;
+        color: #111;
+        text-align: left;
+    }
+
+    .define-tooltip.is-visible {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    .define-tooltip.is-flipped {
+        bottom: auto;
+        top: calc(100% + 10px);
+    }
+
+    .define-tooltip::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: -6px;
+        border-width: 6px 6px 0;
+        border-style: solid;
+        border-color: #e8e8e8 transparent transparent;
+    }
+
+    .define-tooltip::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: -5px;
+        border-width: 6px 6px 0;
+        border-style: solid;
+        border-color: #fafafa transparent transparent;
+        z-index: 1;
+    }
+
+    .define-tooltip.is-flipped::after {
+        bottom: auto;
+        top: -6px;
+        border-width: 0 6px 6px;
+        border-color: transparent transparent #e8e8e8;
+    }
+
+    .define-tooltip.is-flipped::before {
+        bottom: auto;
+        top: -5px;
+        border-width: 0 6px 6px;
+        border-color: transparent transparent #fafafa;
+        z-index: 1;
+    }
+
+    .define-tooltip-term {
+        font-weight: 600;
+        font-size: 1.05rem;
+        margin-bottom: 4px;
+        color: #111;
+    }
+
+    .define-tooltip-body {
+        color: #333;
+        max-height: 180px;
+        overflow-y: auto;
+    }
+
+    .define-tooltip-close {
+        display: none;
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        background: none;
+        border: none;
+        font-size: 1.1rem;
+        color: #666;
+        cursor: pointer;
+        padding: 2px 6px;
+        line-height: 1;
+    }
+
+    .define-tooltip-close:hover {
+        color: #111;
+    }
+
+    @media (hover: none), (pointer: coarse) {
+        .define-tooltip-close {
+            display: block;
+        }
+    }
+
+    /* Excalidraw embed */
+    .excalidraw-embed {
+        position: relative;
+        margin: 1.5rem 0;
+        border: 1px solid #e8e8e8;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .excalidraw-embed iframe {
+        display: block;
+    }
+
+    .excalidraw-fullscreen-btn {
+        position: absolute;
+        bottom: 12px;
+        right: 12px;
+        background: #333;
+        color: #fff;
+        border: none;
+        padding: 6px 14px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-family: 'Source Code Pro', monospace;
+        cursor: pointer;
+        z-index: 10;
+        opacity: 0.8;
+        transition: opacity 0.15s;
+    }
+
+    .excalidraw-fullscreen-btn:hover {
+        opacity: 1;
+    }
+
+    .excalidraw-embed .collapse-label {
+        display: none;
+    }
+
+    .excalidraw-embed.is-fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        z-index: 9999;
+        background: #fff;
+    }
+
+    .excalidraw-embed.is-fullscreen iframe {
+        height: 100vh !important;
+    }
+
+    .excalidraw-embed.is-fullscreen .expand-label {
+        display: none;
+    }
+
+    .excalidraw-embed.is-fullscreen .collapse-label {
+        display: inline;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("a[href^='http']").forEach(function (link) {
+            link.setAttribute("target", "_blank");
+            link.setAttribute("rel", "noopener noreferrer");
+        });
+    });
+</script>
+
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            fontSize: '32px',
+            fontFamily: 'Source Code Pro',
+        }
+    });
+</script>
+
+<article class="post">
+    <header class="post-header">
+        <h1 class="post-title">Reverse-Engineering Claude Code: A Deep Dive into Anthropic&#39;s AI-Powered CLI</h1>
+        
+            <p class="post-description">An exhaustive technical analysis of the architecture, systems, and engineering behind Claude Code — Anthropic's flagship developer tool.</p>
+        
+        <p class="post-meta">
+            March 31, 2026 · 59 min read · <span class="post-tags"><a href="/tags/#architecture">architecture</a></span>
+        </p>
+    </header>
+
+    
+
+    <div class="post-content">
+        <h2 id="table-of-contents">Table of Contents</h2>
+
+<ol>
+  <li><a href="#1-introduction-what-is-claude-code">Introduction: What is Claude Code?</a></li>
+  <li><a href="#2-high-level-architecture">High-Level Architecture</a></li>
+  <li><a href="#3-startup-the-race-against-time">Startup: The Race Against Time</a></li>
+  <li><a href="#4-the-query-engine-brains-of-the-operation">The Query Engine: Brains of the Operation</a></li>
+  <li><a href="#5-the-tool-system-60-tools-behind-a-single-interface">The Tool System: 60+ Tools Behind a Single Interface</a></li>
+  <li><a href="#6-the-permission-system-safety-at-every-layer">The Permission System: Safety at Every Layer</a></li>
+  <li><a href="#7-terminal-ui-react-but-for-your-terminal">Terminal UI: React, but for Your Terminal</a></li>
+  <li><a href="#8-the-command-system-100-slash-commands">The Command System: 100+ Slash Commands</a></li>
+  <li><a href="#9-skills-plugins-and-mcp-the-extensibility-trifecta">Skills, Plugins, and MCP: The Extensibility Trifecta</a></li>
+  <li><a href="#10-context-management-fighting-the-token-limit">Context Management: Fighting the Token Limit</a></li>
+  <li><a href="#11-state-management-immutable-store-for-a-mutable-world">State Management: Immutable Store for a Mutable World</a></li>
+  <li><a href="#12-session-persistence-and-history">Session Persistence and History</a></li>
+  <li><a href="#13-multi-agent-architecture-subagents-swarms-and-worktrees">Multi-Agent Architecture: Subagents, Swarms, and Worktrees</a></li>
+  <li><a href="#14-error-recovery-a-system-that-refuses-to-crash">Error Recovery: A System That Refuses to Crash</a></li>
+  <li><a href="#15-cost-tracking-and-telemetry">Cost Tracking and Telemetry</a></li>
+  <li><a href="#16-execution-modes-one-codebase-many-faces">Execution Modes: One Codebase, Many Faces</a></li>
+  <li><a href="#17-buddy-a-tamagotchi-style-ai-pet">BUDDY: A Tamagotchi-Style AI Pet</a></li>
+  <li><a href="#18-kairos-persistent-assistant-mode-and-auto-dreaming">KAIROS: Persistent Assistant Mode and Auto-Dreaming</a></li>
+  <li><a href="#19-ultraplan-remote-planning-sessions">ULTRAPLAN: Remote Planning Sessions</a></li>
+  <li><a href="#20-coordinator-mode-multi-agent-orchestrator">Coordinator Mode: Multi-Agent Orchestrator</a></li>
+  <li><a href="#21-the-memory-system-persistent-ai-memory">The Memory System: Persistent AI Memory</a></li>
+  <li><a href="#22-hooks-user-defined-automation">Hooks: User-Defined Automation</a></li>
+  <li><a href="#23-voice-mode-bridge-and-infrastructure">Voice Mode, Bridge, and Infrastructure</a></li>
+  <li><a href="#24-vim-mode-keybindings-and-developer-ergonomics">Vim Mode, Keybindings, and Developer Ergonomics</a></li>
+  <li><a href="#25-key-engineering-patterns-and-takeaways">Key Engineering Patterns and Takeaways</a></li>
+  <li><a href="#26-conclusion">Conclusion</a></li>
+</ol>
+
+<h2 id="1-introduction-what-is-claude-code">1. Introduction: What is Claude Code?</h2>
+
+<p>Claude Code is Anthropic’s official CLI tool — an interactive, AI-powered development assistant that lives in your terminal. It lets developers have natural-language conversations with Claude to edit files, run shell commands, search codebases, manage Git workflows, create pull requests, debug issues, and much more.</p>
+
+<p>But underneath the conversational interface lies a <strong>remarkably sophisticated piece of software engineering</strong>: a custom React-based terminal renderer, a multi-layered permission system, an elastic tool discovery mechanism, a self-healing query loop with automatic context compression, and an extensibility framework spanning skills, plugins, and the Model Context Protocol (MCP).</p>
+
+<p>This article is a deep technical analysis of the Claude Code source code — approximately <strong>330+ utility files, 45+ tool implementations, 100+ slash commands, 146 UI components, and a custom terminal rendering framework</strong> — all written in TypeScript with React, running on Bun.</p>
+
+<p>Let’s take it apart, piece by piece.</p>
+
+<h2 id="2-high-level-architecture">2. High-Level Architecture</h2>
+
+<p>Claude Code follows a layered architecture where each layer has clear responsibilities:</p>
+
+<p><img src="/assets/claudecode/high-level-architecture.png" alt="Claude Code high-level architecture" /></p>
+
+<h3 id="tech-stack">Tech Stack</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Layer</th>
+      <th>Technology</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Language</td>
+      <td>TypeScript (strict mode)</td>
+    </tr>
+    <tr>
+      <td>Runtime</td>
+      <td>Bun (with Node.js 18+ compatibility)</td>
+    </tr>
+    <tr>
+      <td>UI Framework</td>
+      <td>React 18 with custom terminal reconciler</td>
+    </tr>
+    <tr>
+      <td>Layout Engine</td>
+      <td>Yoga (Facebook’s flexbox implementation)</td>
+    </tr>
+    <tr>
+      <td>API Client</td>
+      <td><code class="language-plaintext highlighter-rouge">@anthropic-ai/sdk</code></td>
+    </tr>
+    <tr>
+      <td>Extensibility</td>
+      <td>Model Context Protocol (MCP) SDK</td>
+    </tr>
+    <tr>
+      <td>Validation</td>
+      <td>Zod (schema-driven I/O for all tools)</td>
+    </tr>
+    <tr>
+      <td>CLI Framework</td>
+      <td>Commander.js</td>
+    </tr>
+    <tr>
+      <td>Linting</td>
+      <td>Biome + ESLint</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="directory-structure">Directory Structure</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>src/
+├── main.tsx                 # Application entry (~800KB, bootstraps everything)
+├── QueryEngine.ts           # Conversation management &amp; API orchestration
+├── query.ts                 # Query loop state machine (retries, compaction, recovery)
+├── Tool.ts                  # Unified tool interface (generic over Input/Output/Progress)
+├── tools.ts                 # Tool registry with feature-gated loading
+├── commands.ts              # Command registry with lazy dispatch
+├── context.ts               # System/user context builder (git, CLAUDE.md, date)
+├── cost-tracker.ts          # Per-model usage accumulation and display
+├── history.ts               # Session history (JSONL, dedup, paste refs)
+├── setup.ts                 # Pre-action configuration and auth
+├── entrypoints/             # CLI, SDK, MCP entry points
+├── tools/                   # 45+ tool implementations (Bash, FileRead, Agent, etc.)
+├── commands/                # 100+ slash command implementations
+├── components/              # 146 React terminal components
+├── ink/                     # Custom terminal rendering framework (~90 files)
+├── services/                # API, analytics, MCP, compact, plugins
+├── hooks/                   # 85+ hook implementations
+├── state/                   # AppState store (Zustand-like)
+├── utils/                   # 330+ utilities (git, config, permissions, etc.)
+├── skills/                  # Skill loading, bundled skills
+├── keybindings/             # Dynamic keybinding system
+├── vim/                     # Full vi/vim mode
+├── bridge/                  # CCR bridge (WebSocket to claude.ai)
+├── coordinator/             # Multi-agent coordination
+├── remote/                  # Remote session management
+├── tasks/                   # Background task system
+├── migrations/              # Versioned data migrations
+└── types/                   # Shared type definitions
+</code></pre></div></div>
+
+<h2 id="3-startup-the-race-against-time">3. Startup: The Race Against Time</h2>
+
+<p>Claude Code’s startup is aggressively optimized. The goal: minimize time-to-first-render so the developer is never left staring at a blank terminal.</p>
+
+<h3 id="31-parallelized-prefetching">3.1 Parallelized Prefetching</h3>
+
+<p>Before <em>any</em> module imports happen, three critical operations fire in parallel:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// main.tsx — lines 1-20, before any other imports</span>
+<span class="nx">profileCheckpoint</span><span class="p">(</span><span class="dl">'</span><span class="s1">main_tsx_entry</span><span class="dl">'</span><span class="p">)</span>
+<span class="nx">startMdmRawRead</span><span class="p">()</span>        <span class="c1">// macOS MDM policy read (subprocess)</span>
+<span class="nx">startKeychainPrefetch</span><span class="p">()</span>   <span class="c1">// OAuth + API key keychain reads (2 subprocesses)</span>
+</code></pre></div></div>
+
+<p>This exploits a clever insight: TypeScript module evaluation takes ~135ms anyway (sequential by nature). By spawning subprocesses <em>immediately</em>, macOS keychain reads (~65ms total) run entirely in parallel with import resolution, becoming effectively free.</p>
+
+<h3 id="32-initialization-sequence">3.2 Initialization Sequence</h3>
+
+<p>The <code class="language-plaintext highlighter-rouge">init()</code> function (memoized to prevent re-entrancy) orchestrates 16 setup stages:</p>
+
+<ol>
+  <li><strong>Config validation</strong> — Parse and validate all JSON config files</li>
+  <li><strong>Safe environment variables</strong> — Apply non-sensitive env vars before trust dialog</li>
+  <li><strong>CA certificates</strong> — Load extra root CAs before first TLS handshake</li>
+  <li><strong>Graceful shutdown handlers</strong> — Register <code class="language-plaintext highlighter-rouge">SIGINT</code>/<code class="language-plaintext highlighter-rouge">SIGTERM</code> handlers</li>
+  <li><strong>OAuth population</strong> — Async account info fetch</li>
+  <li><strong>IDE detection</strong> — JetBrains, VS Code identification</li>
+  <li><strong>Remote settings</strong> — Fetch managed settings from server (async, awaited later)</li>
+  <li><strong>Policy limits</strong> — Load org-enforced limits (async)</li>
+  <li><strong>First-start timestamp</strong> — Analytics marker</li>
+  <li><strong>mTLS configuration</strong> — Client certificate setup</li>
+  <li><strong>Proxy agents</strong> — Configure HTTP/HTTPS proxies</li>
+  <li><strong>API preconnection</strong> — TCP+TLS handshake overlaps with remaining init</li>
+  <li><strong>Upstream proxy (CCR)</strong> — CONNECT relay for organization credentials</li>
+  <li><strong>Shell detection</strong> — Windows-specific shell resolution</li>
+  <li><strong>LSP manager</strong> — Language Server Protocol cleanup handlers</li>
+  <li><strong>Team cleanup</strong> — Multi-agent swarm cleanup on shutdown</li>
+</ol>
+
+<h3 id="33-fast-paths">3.3 Fast Paths</h3>
+
+<p>Before full initialization, fast paths handle quick-exit commands:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">--version</code> — Print version and exit (no init, no React)</li>
+  <li><code class="language-plaintext highlighter-rouge">--dump-system-prompt</code> — Output the system prompt and exit</li>
+  <li><code class="language-plaintext highlighter-rouge">mcp serve</code> — Start MCP server mode (different init path)</li>
+</ul>
+
+<h3 id="34-startup-profiling">3.4 Startup Profiling</h3>
+
+<p>A sampled profiler (<code class="language-plaintext highlighter-rouge">startupProfiler.ts</code>) measures every phase:</p>
+<ul>
+  <li>100% of internal builds get sampled</li>
+  <li>0.5% of external users are sampled</li>
+  <li><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_PROFILE_STARTUP=1</code> forces full profiling with memory snapshots</li>
+</ul>
+
+<p>The decision is made once at module load time — non-sampled users pay zero profiling overhead.</p>
+
+<h3 id="35-entrypoint-resolution">3.5 Entrypoint Resolution</h3>
+
+<p>The system identifies its execution context early and sets <code class="language-plaintext highlighter-rouge">CLAUDE_CODE_ENTRYPOINT</code>:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Value</th>
+      <th>Context</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">cli</code></td>
+      <td>Interactive terminal session</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">sdk-cli</code></td>
+      <td>Non-interactive (print mode, piped)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">mcp</code></td>
+      <td>Running as an MCP server</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">local-agent</code></td>
+      <td>Spawned as a subagent</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">claude-code-github-action</code></td>
+      <td>GitHub Actions CI</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>This gates feature loading — for example, REPL components only load in interactive mode.</p>
+
+<h2 id="4-the-query-engine-brains-of-the-operation">4. The Query Engine: Brains of the Operation</h2>
+
+<p>The query engine is the core loop that manages conversations with Claude. It’s split across two files: <code class="language-plaintext highlighter-rouge">QueryEngine.ts</code> (session-level orchestration) and <code class="language-plaintext highlighter-rouge">query.ts</code> (per-turn state machine).</p>
+
+<h3 id="41-queryengine-the-session-coordinator">4.1 QueryEngine: The Session Coordinator</h3>
+
+<p>The <code class="language-plaintext highlighter-rouge">QueryEngine</code> class is a singleton per conversation. It persists state across turns and coordinates:</p>
+
+<ul>
+  <li><strong>System context building</strong> (git status, CLAUDE.md files, date)</li>
+  <li><strong>Message management</strong> (accumulation, normalization, persistence)</li>
+  <li><strong>API calls</strong> (streaming, retries, fallback)</li>
+  <li><strong>Permission tracking</strong> (denial counts for SDK reporting)</li>
+  <li><strong>Cost accumulation</strong> (per-model token tracking)</li>
+</ul>
+
+<p>Key method: <code class="language-plaintext highlighter-rouge">submitMessage(prompt, options)</code> — an AsyncGenerator that yields SDK messages throughout the turn. Before entering the query loop, it:</p>
+
+<ol>
+  <li>Creates a <strong>file history snapshot</strong> (for undo/restore)</li>
+  <li>Records the transcript to disk <em>before</em> the API call (even if the process is killed mid-request, the conversation is resumable)</li>
+  <li>Wraps <code class="language-plaintext highlighter-rouge">canUseTool</code> to track permission denials</li>
+</ol>
+
+<h3 id="42-the-query-loop-a-resilient-state-machine">4.2 The Query Loop: A Resilient State Machine</h3>
+
+<p>The <code class="language-plaintext highlighter-rouge">query()</code> function in <code class="language-plaintext highlighter-rouge">query.ts</code> is where the magic happens. It’s a <code class="language-plaintext highlighter-rouge">while(true)</code> loop managing a mutable state object:</p>
+
+<p><img src="/assets/claudecode/query-loop-state-machine.png" alt="Claude Code query loop state machine" /></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>queryLoop():
+  while(true):
+    1. Prefetch memory + skills (parallel)
+    2. Apply message compaction (snip, microcompact, context collapse)
+    3. Call API with streaming
+    4. Handle streaming errors (fallback, retry)
+    5. Execute tools (concurrent or serial)
+    6. Check recovery paths (compact, collapse drain, token escalation)
+    7. Continue loop or return
+</code></pre></div></div>
+
+<p>The state object tracks everything needed across iterations:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">type</span> <span class="nx">State</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="na">messages</span><span class="p">:</span> <span class="nx">Message</span><span class="p">[]</span>
+  <span class="na">toolUseContext</span><span class="p">:</span> <span class="nx">ToolAvailabilityContext</span>
+  <span class="na">maxOutputTokensRecoveryCount</span><span class="p">:</span> <span class="kr">number</span>  <span class="c1">// 0–3 limit</span>
+  <span class="na">autoCompactTracking</span><span class="p">:</span> <span class="nx">CompactState</span>     <span class="c1">// Compaction state + failure count</span>
+  <span class="na">pendingToolUseSummary</span><span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="p">...</span><span class="o">&gt;</span>   <span class="c1">// Async tool summaries</span>
+  <span class="na">transition</span><span class="p">:</span> <span class="nx">TransitionReason</span>          <span class="c1">// Why the loop didn't terminate</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="43-streaming-and-tool-execution">4.3 Streaming and Tool Execution</h3>
+
+<p>The query loop streams API responses and processes them incrementally:</p>
+
+<ol>
+  <li><strong>Stream start</strong> — Yields <code class="language-plaintext highlighter-rouge">stream_request_start</code> event</li>
+  <li><strong>Accumulation</strong> — Collects <code class="language-plaintext highlighter-rouge">assistantMessages</code>, <code class="language-plaintext highlighter-rouge">toolUseBlocks</code>, <code class="language-plaintext highlighter-rouge">toolResults</code></li>
+  <li><strong>Usage tracking</strong> — Tracks <code class="language-plaintext highlighter-rouge">currentMessageUsage</code> and <code class="language-plaintext highlighter-rouge">lastStopReason</code></li>
+  <li><strong>Tool dispatch</strong> — Routes tool calls to the orchestrator</li>
+</ol>
+
+<p>Tool execution uses a sophisticated concurrency model:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>partitionToolCalls(blocks[]):
+  ├─ Batch 1: Read-only tools A, B, C  → runConcurrently(max=10)
+  ├─ Batch 2: Write tool D              → runSerially()
+  ├─ Batch 3: Read-only tools E, F      → runConcurrently(max=10)
+  └─ ...
+</code></pre></div></div>
+
+<p>Each tool’s <code class="language-plaintext highlighter-rouge">isConcurrencySafe()</code> method determines if it can run in parallel. Read-only tools (glob, grep, file reads) run concurrently; write tools (edits, bash with side effects) run serially with context propagation between batches.</p>
+
+<p>A <strong>streaming tool executor</strong> can even begin executing tools <em>while the model is still streaming</em>, reducing latency by overlapping computation and I/O.</p>
+
+<h3 id="44-token-budget-continuation">4.4 Token Budget Continuation</h3>
+
+<p>When the model’s output budget is approaching exhaustion but the task isn’t complete, the engine:</p>
+
+<ol>
+  <li>Injects an invisible meta-message: <em>“Resume directly — no apology, no recap”</em></li>
+  <li>Continues the loop with a <code class="language-plaintext highlighter-rouge">token_budget_continuation</code> transition</li>
+  <li>Tracks cumulative tokens without interrupting the user</li>
+  <li>Detects diminishing returns to avoid infinite loops</li>
+</ol>
+
+<p>Maximum 3 consecutive output-token recovery attempts before surfacing the stop reason.</p>
+
+<h2 id="5-the-tool-system-60-tools-behind-a-single-interface">5. The Tool System: 60+ Tools Behind a Single Interface</h2>
+
+<p>Every tool in Claude Code conforms to a single generic interface:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">interface</span> <span class="nx">Tool</span><span class="o">&lt;</span><span class="nx">Input</span><span class="p">,</span> <span class="nx">Output</span><span class="p">,</span> <span class="nx">Progress</span><span class="o">&gt;</span> <span class="p">{</span>
+  <span class="na">name</span><span class="p">:</span> <span class="kr">string</span>
+  <span class="nx">description</span><span class="p">():</span> <span class="kr">string</span>          <span class="c1">// Dynamic, permission-context-aware</span>
+  <span class="nx">prompt</span><span class="p">():</span> <span class="kr">string</span>               <span class="c1">// System prompt additions</span>
+  <span class="na">inputSchema</span><span class="p">:</span> <span class="nx">ZodSchema</span><span class="o">&lt;</span><span class="nx">Input</span><span class="o">&gt;</span>  <span class="c1">// Zod → JSON Schema for API</span>
+
+  <span class="nx">call</span><span class="p">(</span><span class="na">input</span><span class="p">:</span> <span class="nx">Input</span><span class="p">,</span> <span class="na">context</span><span class="p">:</span> <span class="nx">ToolContext</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">ToolResult</span><span class="o">&lt;</span><span class="nx">Output</span><span class="o">&gt;&gt;</span>
+  <span class="nx">checkPermissions</span><span class="p">(</span><span class="na">input</span><span class="p">:</span> <span class="nx">Input</span><span class="p">):</span> <span class="nx">PermissionResult</span>
+  <span class="nx">validateInput</span><span class="p">(</span><span class="na">input</span><span class="p">:</span> <span class="nx">Input</span><span class="p">):</span> <span class="nx">ValidationResult</span>
+  <span class="nx">isConcurrencySafe</span><span class="p">(</span><span class="na">input</span><span class="p">:</span> <span class="nx">Input</span><span class="p">):</span> <span class="nx">boolean</span>
+
+  <span class="c1">// 4-tier rendering</span>
+  <span class="nx">renderToolUseMessage</span><span class="p">(</span><span class="na">input</span><span class="p">:</span> <span class="nx">Input</span><span class="p">):</span> <span class="nx">ReactNode</span>
+  <span class="nx">renderToolUseProgressMessage</span><span class="p">(</span><span class="na">input</span><span class="p">:</span> <span class="nx">Input</span><span class="p">,</span> <span class="na">progress</span><span class="p">:</span> <span class="nx">Progress</span><span class="p">):</span> <span class="nx">ReactNode</span>
+  <span class="nx">renderToolResultMessage</span><span class="p">(</span><span class="na">output</span><span class="p">:</span> <span class="nx">Output</span><span class="p">):</span> <span class="nx">ReactNode</span>
+  <span class="nx">renderToolUseErrorMessage</span><span class="p">(</span><span class="na">error</span><span class="p">:</span> <span class="nb">Error</span><span class="p">):</span> <span class="nx">ReactNode</span>
+
+  <span class="nx">mapToolResultToToolResultBlockParam</span><span class="p">(</span><span class="na">output</span><span class="p">:</span> <span class="nx">Output</span><span class="p">,</span> <span class="na">id</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="nx">ToolResultBlockParam</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="51-the-tool-registry">5.1 The Tool Registry</h3>
+
+<p>Tools are loaded through a feature-gated registry:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">assembleToolPool</span><span class="p">(</span><span class="nx">permissionContext</span><span class="p">,</span> <span class="nx">mcpTools</span><span class="p">):</span>
+  <span class="mi">1</span><span class="p">.</span> <span class="nx">getTools</span><span class="p">(</span><span class="nx">permissionContext</span><span class="p">)</span>        <span class="c1">// Filter built-ins by deny rules</span>
+  <span class="mi">2</span><span class="p">.</span> <span class="nx">filterToolsByDenyRules</span><span class="p">()</span>           <span class="c1">// Remove blanket-denied MCP tools</span>
+  <span class="mi">3</span><span class="p">.</span> <span class="nx">uniqBy</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>                       <span class="c1">// Deduplicate (built-ins win)</span>
+  <span class="mi">4</span><span class="p">.</span> <span class="nx">sort</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>                         <span class="c1">// Alphabetical for prompt cache stability</span>
+</code></pre></div></div>
+
+<p>Sorting by name is a subtle but important optimization: it keeps the tool list in the same order across requests, maximizing <strong>prompt cache hit rates</strong> on the API side.</p>
+
+<h3 id="52-deferred-tool-discovery">5.2 Deferred Tool Discovery</h3>
+
+<p>Not all 60+ tools are sent to the model in every request. Tools marked <code class="language-plaintext highlighter-rouge">shouldDefer: true</code> are hidden until the model explicitly searches for them via <code class="language-plaintext highlighter-rouge">ToolSearchTool</code>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Model: "I need to create a task..."
+  → Calls ToolSearchTool("task create")
+  → Returns TaskCreateTool schema
+  → Model calls TaskCreateTool in the same turn
+</code></pre></div></div>
+
+<p>~18 tools are deferred: LSP, TaskCreate, MCPTool, SkillTool, EnterPlanMode, etc. This keeps the base prompt under 200K tokens while allowing elastic discovery.</p>
+
+<h3 id="53-key-tool-implementations">5.3 Key Tool Implementations</h3>
+
+<h4 id="bashtool--command-execution-with-guardrails">BashTool — Command Execution with Guardrails</h4>
+
+<p>The most frequently used tool runs shell commands with extensive safety:</p>
+
+<ul>
+  <li><strong>30K character result limit</strong> — Large outputs persist to disk with a preview</li>
+  <li><strong>Sandbox awareness</strong> — Detects containerized vs. native execution</li>
+  <li><strong>Background tasks</strong> — Auto-backgrounds commands exceeding 15 seconds</li>
+  <li><strong>Search classification</strong> — Marks <code class="language-plaintext highlighter-rouge">ls</code>, <code class="language-plaintext highlighter-rouge">grep</code>, <code class="language-plaintext highlighter-rouge">cat</code> output as collapsible in the UI</li>
+  <li><strong>Permission dialogs</strong> — <code class="language-plaintext highlighter-rouge">sed</code> edits show a preview before execution</li>
+</ul>
+
+<h4 id="fileedittool--precision-string-replacement">FileEditTool — Precision String Replacement</h4>
+
+<p>Rather than rewriting entire files, the edit tool does surgical string replacement:</p>
+
+<ul>
+  <li><strong>Old/new string matching</strong> — Finds exact occurrences, replaces one or all</li>
+  <li><strong>1 GiB size limit</strong> — Prevents OOM on massive files</li>
+  <li><strong>Git-aware diffing</strong> — Shows before/after diff via <code class="language-plaintext highlighter-rouge">gitDiff()</code></li>
+  <li><strong>Undo integration</strong> — Plugs into FileHistory for one-click undo</li>
+</ul>
+
+<h4 id="agenttool--subagent-spawning">AgentTool — Subagent Spawning</h4>
+
+<p>Claude Code can spawn child agents for parallel work:</p>
+
+<ul>
+  <li><strong>Isolation modes</strong> — Worktree (isolated git branch) or remote (CCR)</li>
+  <li><strong>Model selection</strong> — Override with <code class="language-plaintext highlighter-rouge">opus | sonnet | haiku</code></li>
+  <li><strong>Background execution</strong> — Agents run async with notification on completion</li>
+  <li><strong>Named addressing</strong> — <code class="language-plaintext highlighter-rouge">SendMessage</code> to named agents for multi-agent coordination</li>
+  <li><strong>Permission inheritance</strong> — Child agents inherit or restrict parent permissions</li>
+</ul>
+
+<h4 id="greptool--content-search-ripgrep-wrapper">GrepTool — Content Search (Ripgrep Wrapper)</h4>
+
+<p>Wraps <code class="language-plaintext highlighter-rouge">rg</code> with sensible defaults for LLM use:</p>
+
+<ul>
+  <li><strong>250-line default limit</strong> — Prevents context flooding</li>
+  <li><strong>Multiline mode</strong> — <code class="language-plaintext highlighter-rouge">rg -U --multiline-dotall</code> for cross-line patterns</li>
+  <li><strong>VCS exclusion</strong> — Auto-skips <code class="language-plaintext highlighter-rouge">.git</code>, <code class="language-plaintext highlighter-rouge">.svn</code>, <code class="language-plaintext highlighter-rouge">.hg</code></li>
+  <li><strong>Three output modes</strong> — Content, file paths only, or match counts</li>
+</ul>
+
+<h4 id="lsptool--language-intelligence">LSPTool — Language Intelligence</h4>
+
+<p>9 operations powered by Language Server Protocol:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">goToDefinition</code>, <code class="language-plaintext highlighter-rouge">findReferences</code>, <code class="language-plaintext highlighter-rouge">hover</code></li>
+  <li><code class="language-plaintext highlighter-rouge">documentSymbol</code>, <code class="language-plaintext highlighter-rouge">workspaceSymbol</code></li>
+  <li><code class="language-plaintext highlighter-rouge">goToImplementation</code>, <code class="language-plaintext highlighter-rouge">prepareCallHierarchy</code></li>
+  <li><code class="language-plaintext highlighter-rouge">incomingCalls</code>, <code class="language-plaintext highlighter-rouge">outgoingCalls</code></li>
+</ul>
+
+<p>Only loaded when an LSP server is connected. Deferred by default.</p>
+
+<h4 id="websearchtool--native-web-search">WebSearchTool — Native Web Search</h4>
+
+<p>Server-side web search (beta feature):</p>
+
+<ul>
+  <li><strong>Max 8 searches</strong> per invocation</li>
+  <li><strong>Domain filtering</strong> — <code class="language-plaintext highlighter-rouge">allowed_domains</code> and <code class="language-plaintext highlighter-rouge">blocked_domains</code> parameters</li>
+  <li><strong>Streaming results</strong> — Interleaves text and citation blocks</li>
+</ul>
+
+<h3 id="54-tool-result-budgeting">5.4 Tool Result Budgeting</h3>
+
+<p>Every tool has a <code class="language-plaintext highlighter-rouge">maxResultSizeChars</code> limit:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Tool</th>
+      <th>Limit</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>BashTool</td>
+      <td>30,000 chars</td>
+    </tr>
+    <tr>
+      <td>GrepTool</td>
+      <td>20,000 chars</td>
+    </tr>
+    <tr>
+      <td>FileReadTool</td>
+      <td>Infinity (never persists)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>When output exceeds the limit, it’s saved to <code class="language-plaintext highlighter-rouge">~/.claude/tool-results/{uuid}/output.txt</code> and the model receives a preview with a file reference. FileReadTool is exempt because persisting its output would create a circular dependency (Read → persist → model reads persisted file → …).</p>
+
+<h3 id="55-lazy-schemas">5.5 Lazy Schemas</h3>
+
+<p>Tool input schemas use a <code class="language-plaintext highlighter-rouge">lazySchema()</code> factory that defers Zod instantiation:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">schema</span> <span class="o">=</span> <span class="nx">lazySchema</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="nx">z</span><span class="p">.</span><span class="nx">object</span><span class="p">({</span>
+  <span class="na">command</span><span class="p">:</span> <span class="nx">z</span><span class="p">.</span><span class="kr">string</span><span class="p">(),</span>
+  <span class="na">timeout</span><span class="p">:</span> <span class="nx">z</span><span class="p">.</span><span class="kr">number</span><span class="p">().</span><span class="nx">optional</span><span class="p">(),</span>
+<span class="p">}))</span>
+</code></pre></div></div>
+
+<p>This prevents circular import cycles (Tool.ts ← tools/ ← Tool.ts) and enables mid-session schema changes when feature flags flip.</p>
+
+<h2 id="6-the-permission-system-safety-at-every-layer">6. The Permission System: Safety at Every Layer</h2>
+
+<p>Claude Code’s permission system is one of its most sophisticated subsystems — a multi-layered defense that balances safety with developer productivity.</p>
+
+<h3 id="61-permission-modes">6.1 Permission Modes</h3>
+
+<p>Five public modes control the default behavior:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Mode</th>
+      <th>Behavior</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">default</code></td>
+      <td>Ask for destructive operations</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">plan</code></td>
+      <td>Read-only + AskUserQuestion (design phase)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">acceptEdits</code></td>
+      <td>Auto-approve file edits, ask for shell</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">bypassPermissions</code></td>
+      <td>Full access (dangerous, opt-in)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">dontAsk</code></td>
+      <td>Auto-deny unsafe commands</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Plus two internal modes:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">auto</code> — ML classifier evaluates each command</li>
+  <li><code class="language-plaintext highlighter-rouge">bubble</code> — Internal delegation to parent agent</li>
+</ul>
+
+<h3 id="62-rule-system">6.2 Rule System</h3>
+
+<p>Permission rules form a priority cascade:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">type</span> <span class="nx">PermissionRule</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="na">source</span><span class="p">:</span> <span class="dl">'</span><span class="s1">userSettings</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">projectSettings</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">localSettings</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">cliArg</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">session</span><span class="dl">'</span>
+  <span class="na">ruleBehavior</span><span class="p">:</span> <span class="dl">'</span><span class="s1">allow</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">deny</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">ask</span><span class="dl">'</span>
+  <span class="na">ruleValue</span><span class="p">:</span> <span class="p">{</span> <span class="na">toolName</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">ruleContent</span><span class="p">?:</span> <span class="kr">string</span> <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Rules support glob patterns: <code class="language-plaintext highlighter-rouge">Bash(git push*)</code> allows any git push command, <code class="language-plaintext highlighter-rouge">Bash(python:*)</code> allows all Python commands.</p>
+
+<h3 id="63-decision-pipeline">6.3 Decision Pipeline</h3>
+
+<p>For every tool call:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1. validateInput()        → Tool-specific validation (size limits, blocked patterns)
+2. checkPermissions()     → Rule matching + classifier + hooks
+3. Decision:
+   ├─ allow  → Execute immediately
+   ├─ deny   → Return error to model
+   └─ ask    → Show permission dialog to user
+4. Pre/Post hooks         → Can modify input or block execution
+</code></pre></div></div>
+
+<h3 id="64-dangerous-pattern-detection">6.4 Dangerous Pattern Detection</h3>
+
+<p>The system identifies permission rules that are too broad to auto-allow:</p>
+
+<ul>
+  <li><strong>Tool-level allow</strong> (no content restriction) — Would allow ALL commands</li>
+  <li><strong>Interpreter prefixes</strong> — <code class="language-plaintext highlighter-rouge">python:*</code>, <code class="language-plaintext highlighter-rouge">node:*</code>, <code class="language-plaintext highlighter-rouge">ruby:*</code> (arbitrary code execution)</li>
+  <li><strong>Wildcards</strong> — <code class="language-plaintext highlighter-rouge">*</code>, <code class="language-plaintext highlighter-rouge">python*</code> (too permissive)</li>
+</ul>
+
+<h3 id="65-three-way-permission-result">6.5 Three-Way Permission Result</h3>
+
+<p>Every permission check returns a typed union:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">type</span> <span class="nx">PermissionResult</span> <span class="o">=</span>
+  <span class="o">|</span> <span class="p">{</span> <span class="na">behavior</span><span class="p">:</span> <span class="dl">'</span><span class="s1">allow</span><span class="dl">'</span><span class="p">,</span> <span class="nx">updatedInput</span><span class="p">?:</span> <span class="nx">Input</span> <span class="p">}</span>   <span class="c1">// Hooks can modify input</span>
+  <span class="o">|</span> <span class="p">{</span> <span class="na">behavior</span><span class="p">:</span> <span class="dl">'</span><span class="s1">ask</span><span class="dl">'</span><span class="p">,</span> <span class="na">message</span><span class="p">:</span> <span class="kr">string</span> <span class="p">}</span>           <span class="c1">// Prompt user</span>
+  <span class="o">|</span> <span class="p">{</span> <span class="na">behavior</span><span class="p">:</span> <span class="dl">'</span><span class="s1">deny</span><span class="dl">'</span><span class="p">,</span> <span class="na">message</span><span class="p">:</span> <span class="kr">string</span> <span class="p">}</span>          <span class="c1">// Block with explanation</span>
+</code></pre></div></div>
+
+<p>The <code class="language-plaintext highlighter-rouge">updatedInput</code> field is powerful: pre-execution hooks can transparently modify tool parameters (e.g., adding safety flags to shell commands).</p>
+
+<h2 id="7-terminal-ui-react-but-for-your-terminal">7. Terminal UI: React, but for Your Terminal</h2>
+
+<p>Perhaps the most impressive subsystem in Claude Code is its custom terminal rendering framework — a complete reimplementation of React rendering for terminal environments, rivaling web browsers in sophistication.</p>
+
+<h3 id="71-the-rendering-pipeline">7.1 The Rendering Pipeline</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>React Components
+    ↓
+Custom React Reconciler (createReconciler API)
+    ↓
+Virtual DOM Tree (ink-box, ink-text, ink-root, ink-link)
+    ↓
+Yoga Layout Engine (flexbox calculations)
+    ↓
+Output Builder (write / blit / clip / clear / shift operations)
+    ↓
+Screen Buffer (2D cell array with interned styles + hyperlinks)
+    ↓
+Diff Engine (compare with previous frame)
+    ↓
+ANSI Escape Sequences → TTY
+</code></pre></div></div>
+
+<h3 id="72-custom-react-reconciler">7.2 Custom React Reconciler</h3>
+
+<p>Claude Code implements a custom React host configuration using <code class="language-plaintext highlighter-rouge">createReconciler</code>:</p>
+
+<p><strong>Element types:</strong></p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">ink-root</code> — Root container</li>
+  <li><code class="language-plaintext highlighter-rouge">ink-box</code> — Flexbox layout container (like <code class="language-plaintext highlighter-rouge">&lt;div&gt;</code>)</li>
+  <li><code class="language-plaintext highlighter-rouge">ink-text</code> — Text content</li>
+  <li><code class="language-plaintext highlighter-rouge">ink-virtual-text</code> — Nested text (layout optimization)</li>
+  <li><code class="language-plaintext highlighter-rouge">ink-link</code> — OSC 8 hyperlinks</li>
+  <li><code class="language-plaintext highlighter-rouge">ink-progress</code> — Progress indicators</li>
+  <li><code class="language-plaintext highlighter-rouge">ink-raw-ansi</code> — Raw ANSI passthrough (bypasses measurement)</li>
+</ul>
+
+<p>The reconciler tracks three categories of changes separately:</p>
+<ul>
+  <li><strong>Styles</strong> — Passed to Yoga for layout recalculation</li>
+  <li><strong>Text styles</strong> — Colorization, bold, italic, etc.</li>
+  <li><strong>Event handlers</strong> — Stored separately to prevent handler identity changes from invalidating the dirty flag</li>
+</ul>
+
+<h3 id="73-yoga-layout-engine">7.3 Yoga Layout Engine</h3>
+
+<p>Rather than manual ANSI cursor positioning, Claude Code uses <strong>Yoga</strong> — Facebook’s cross-platform flexbox implementation — for layout:</p>
+
+<div class="language-tsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">&lt;</span><span class="nc">Box</span> <span class="na">flexDirection</span><span class="p">=</span><span class="s">"row"</span> <span class="na">gap</span><span class="p">=</span><span class="si">{</span><span class="mi">1</span><span class="si">}</span> <span class="na">paddingX</span><span class="p">=</span><span class="si">{</span><span class="mi">2</span><span class="si">}</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nc">Box</span> <span class="na">flexGrow</span><span class="p">=</span><span class="si">{</span><span class="mi">1</span><span class="si">}</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nc">Text</span><span class="p">&gt;</span>Left panel<span class="p">&lt;/</span><span class="nc">Text</span><span class="p">&gt;</span>
+  <span class="p">&lt;/</span><span class="nc">Box</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nc">Box</span> <span class="na">width</span><span class="p">=</span><span class="si">{</span><span class="mi">30</span><span class="si">}</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nc">Text</span><span class="p">&gt;</span>Right sidebar<span class="p">&lt;/</span><span class="nc">Text</span><span class="p">&gt;</span>
+  <span class="p">&lt;/</span><span class="nc">Box</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nc">Box</span><span class="p">&gt;</span>
+</code></pre></div></div>
+
+<p>This brings responsive, declarative layouts to the terminal. Text nodes register measure functions with Yoga:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">node</span><span class="p">.</span><span class="nx">yogaNode</span><span class="p">.</span><span class="nx">setMeasureFunc</span><span class="p">((</span><span class="nx">width</span><span class="p">,</span> <span class="nx">measureMode</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="kd">const</span> <span class="nx">wrapped</span> <span class="o">=</span> <span class="nx">wrapText</span><span class="p">(</span><span class="nx">text</span><span class="p">,</span> <span class="nx">width</span><span class="p">)</span>
+  <span class="k">return</span> <span class="p">{</span> <span class="na">width</span><span class="p">:</span> <span class="nx">actualWidth</span><span class="p">,</span> <span class="na">height</span><span class="p">:</span> <span class="nx">numLines</span> <span class="p">}</span>
+<span class="p">})</span>
+</code></pre></div></div>
+
+<p>A generational reset pattern prevents memory leaks from native Yoga bindings:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="p">(</span><span class="nx">now</span> <span class="o">-</span> <span class="nx">lastPoolResetTime</span> <span class="o">&gt;</span> <span class="nx">SESSION_POOL_RESET_MS</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">migrateScreenPools</span><span class="p">()</span>  <span class="c1">// Free and recreate all Yoga nodes</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="74-the-dirty-flag-cascade">7.4 The Dirty Flag Cascade</h3>
+
+<p>Nodes track a <code class="language-plaintext highlighter-rouge">dirty</code> flag that cascades upward:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">function</span> <span class="nx">markDirty</span><span class="p">(</span><span class="nx">node</span><span class="p">:</span> <span class="nx">DOMElement</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">node</span><span class="p">.</span><span class="nx">dirty</span> <span class="o">=</span> <span class="kc">true</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">parentNode</span><span class="p">)</span> <span class="nx">markDirty</span><span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">parentNode</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Only subtrees with dirty ancestors are re-laid out, providing incremental performance.</p>
+
+<h3 id="75-double-buffering-and-blitting">7.5 Double Buffering and Blitting</h3>
+
+<p>The renderer uses classic graphics techniques:</p>
+
+<p><strong>Double buffering:</strong></p>
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">private</span> <span class="nx">frontFrame</span><span class="p">:</span> <span class="nx">Frame</span>   <span class="c1">// Currently displayed</span>
+<span class="k">private</span> <span class="nx">backFrame</span><span class="p">:</span> <span class="nx">Frame</span>    <span class="c1">// Being rendered into</span>
+<span class="c1">// After render: swap pointers</span>
+<span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">frontFrame</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">backFrame</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">backFrame</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">frontFrame</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p><strong>Blitting (copy unchanged regions):</strong></p>
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">blit</span><span class="p">(</span><span class="nx">src</span><span class="p">:</span> <span class="nx">Screen</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">)</span>
+<span class="c1">// If a region hasn't changed, copy from previous frame</span>
+<span class="c1">// instead of re-rendering — the "GPU blit" technique for terminals</span>
+</code></pre></div></div>
+
+<p>When a selection overlay is applied, it “contaminates” the frame, disabling blit for the next render to prevent visual artifacts.</p>
+
+<h3 id="76-screen-buffer-the-2d-cell-model">7.6 Screen Buffer: The 2D Cell Model</h3>
+
+<p>The screen is a 2D array of cells:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">type</span> <span class="nx">Cell</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="na">char</span><span class="p">:</span> <span class="kr">string</span>          <span class="c1">// Interned via CharPool</span>
+  <span class="na">width</span><span class="p">:</span> <span class="nx">CellWidth</span>      <span class="c1">// 1 (normal), 2 (wide/CJK/emoji), -1 (tail of wide char)</span>
+  <span class="na">styleId</span><span class="p">:</span> <span class="kr">number</span>       <span class="c1">// Interned via StylePool</span>
+  <span class="nx">hyperlink</span><span class="p">?:</span> <span class="kr">number</span>    <span class="c1">// Interned via HyperlinkPool</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><strong>Three interning pools</strong> minimize memory and enable O(1) comparisons:</p>
+
+<ul>
+  <li><strong>CharPool</strong> — Deduplicates character strings, returns integer IDs</li>
+  <li><strong>StylePool</strong> — Deduplicates ANSI style combinations, pre-computes transition sequences</li>
+  <li><strong>HyperlinkPool</strong> — Deduplicates OSC 8 URLs (reset every 5 minutes to bound growth)</li>
+</ul>
+
+<p>The style pool’s <code class="language-plaintext highlighter-rouge">transition()</code> method is especially clever:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Pre-computed: "how to go from style A to style B"</span>
+<span class="nx">transition</span><span class="p">(</span><span class="nx">fromId</span><span class="p">:</span> <span class="kr">number</span><span class="p">,</span> <span class="nx">toId</span><span class="p">:</span> <span class="kr">number</span><span class="p">):</span> <span class="kr">string</span> <span class="p">{</span>
+  <span class="kd">const</span> <span class="nx">key</span> <span class="o">=</span> <span class="nx">fromId</span> <span class="o">*</span> <span class="mh">0x100000</span> <span class="o">+</span> <span class="nx">toId</span>
+  <span class="k">return</span> <span class="nx">transitionCache</span><span class="p">.</span><span class="kd">get</span><span class="p">(</span><span class="nx">key</span><span class="p">)</span>  <span class="c1">// O(1) vs. diffing AnsiCode arrays</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="77-scroll-optimization">7.7 Scroll Optimization</h3>
+
+<p>ScrollBox uses hardware scroll regions when available:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CSI top;bottom r    → Set scroll region
+CSI n S             → Scroll up n lines (DECSTBM)
+</code></pre></div></div>
+
+<p>This is dramatically faster than rewriting 50+ rows of content. For smooth animation, scroll deltas accumulate and drain at terminal-specific rates:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Native terminals: proportional drain (~3/4 per frame)</span>
+<span class="kd">const</span> <span class="nx">step</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">max</span><span class="p">(</span><span class="nx">MIN</span><span class="p">,</span> <span class="p">(</span><span class="nx">abs</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="c1">// xterm.js: adaptive (instant for ≤5, smaller steps for fast scrolls)</span>
+<span class="kd">const</span> <span class="nx">step</span> <span class="o">=</span> <span class="nx">abs</span> <span class="o">&lt;=</span> <span class="mi">5</span> <span class="p">?</span> <span class="nx">abs</span> <span class="p">:</span> <span class="nx">abs</span> <span class="o">&lt;</span> <span class="mi">12</span> <span class="p">?</span> <span class="mi">2</span> <span class="p">:</span> <span class="mi">3</span>
+</code></pre></div></div>
+
+<h3 id="78-event-system">7.8 Event System</h3>
+
+<p>Events follow DOM semantics with capture and bubble phases:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">function</span> <span class="nx">collectListeners</span><span class="p">(</span><span class="nx">target</span><span class="p">,</span> <span class="nx">event</span><span class="p">):</span> <span class="nx">DispatchListener</span><span class="p">[]</span> <span class="p">{</span>
+  <span class="c1">// Walk from target to root</span>
+  <span class="c1">// Capture handlers: root-first</span>
+  <span class="c1">// Bubble handlers: target-first</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Event priority mirrors web browsers:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Priority</th>
+      <th>Events</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Discrete (sync)</td>
+      <td><code class="language-plaintext highlighter-rouge">keydown</code>, <code class="language-plaintext highlighter-rouge">keyup</code>, <code class="language-plaintext highlighter-rouge">click</code>, <code class="language-plaintext highlighter-rouge">focus</code>, <code class="language-plaintext highlighter-rouge">blur</code>, <code class="language-plaintext highlighter-rouge">paste</code></td>
+    </tr>
+    <tr>
+      <td>Continuous (batched)</td>
+      <td><code class="language-plaintext highlighter-rouge">resize</code>, <code class="language-plaintext highlighter-rouge">scroll</code>, <code class="language-plaintext highlighter-rouge">mousemove</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="79-text-selection">7.9 Text Selection</h3>
+
+<p>Full text selection with word and line modes:</p>
+
+<ul>
+  <li><strong>Character mode</strong> — Drag selects character by character</li>
+  <li><strong>Word mode</strong> — Double-click selects word; subsequent drag extends by word boundaries</li>
+  <li><strong>Line mode</strong> — Triple-click selects line; drag extends by lines</li>
+  <li><strong>Scroll tracking</strong> — Text that scrolls off-screen is accumulated for correct copy</li>
+  <li><strong>Soft-wrap handling</strong> — Wrapped lines are joined into logical lines when copying</li>
+</ul>
+
+<h3 id="710-keyboard-input-parsing">7.10 Keyboard Input Parsing</h3>
+
+<p>Terminal keyboard input is notoriously ambiguous. The parser handles multiple protocols:</p>
+
+<ul>
+  <li><strong>Kitty Keyboard Protocol</strong> — <code class="language-plaintext highlighter-rouge">CSI u</code> with codepoint + modifiers</li>
+  <li><strong>xterm modifyOtherKeys</strong> — <code class="language-plaintext highlighter-rouge">CSI 27; modifier; keycode ~</code></li>
+  <li><strong>Legacy function keys</strong> — F1-F12 with their many escape sequence variants</li>
+  <li><strong>SGR mouse events</strong> — <code class="language-plaintext highlighter-rouge">CSI &lt; button; col; row M/m</code></li>
+  <li><strong>Terminal identity detection</strong> — XTVERSION response parsing for feature detection</li>
+</ul>
+
+<h2 id="8-the-command-system-100-slash-commands">8. The Command System: 100+ Slash Commands</h2>
+
+<h3 id="81-architecture">8.1 Architecture</h3>
+
+<p>Commands use a declarative registration model with three types:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Execution Model</th>
+      <th>Example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">PromptCommand</code></td>
+      <td>Expands to text sent to Claude</td>
+      <td><code class="language-plaintext highlighter-rouge">/commit</code>, <code class="language-plaintext highlighter-rouge">/review</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">LocalCommand</code></td>
+      <td>Synchronous text output, no UI</td>
+      <td><code class="language-plaintext highlighter-rouge">/clear</code>, <code class="language-plaintext highlighter-rouge">/help</code>, <code class="language-plaintext highlighter-rouge">/status</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">LocalJSXCommand</code></td>
+      <td>React component rendered to terminal</td>
+      <td><code class="language-plaintext highlighter-rouge">/config</code>, <code class="language-plaintext highlighter-rouge">/mcp</code>, <code class="language-plaintext highlighter-rouge">/doctor</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The command registry is <strong>memoized</strong> and <strong>lazy-loaded</strong>:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">COMMANDS</span> <span class="o">=</span> <span class="nx">memoize</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="p">[</span>
+  <span class="c1">// Static commands array — module imports deferred until first call</span>
+<span class="p">])</span>
+
+<span class="kd">const</span> <span class="nx">loadAllCommands</span> <span class="o">=</span> <span class="nx">memoize</span><span class="p">((</span><span class="nx">cwd</span><span class="p">:</span> <span class="kr">string</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="c1">// Merges: COMMANDS() + skills + plugins + workflows + MCP commands</span>
+<span class="p">})</span>
+</code></pre></div></div>
+
+<h3 id="82-command-discovery-pipeline">8.2 Command Discovery Pipeline</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>getCommands(cwd)
+  ├─ loadAllCommands(cwd) [memoized by CWD]
+  │   ├─ getSkills()          → Disk, bundled, plugin, MCP skills
+  │   ├─ getPluginCommands()  → Marketplace + built-in plugins
+  │   ├─ getWorkflowCommands()→ Automation workflows [feature-gated]
+  │   └─ COMMANDS()           → Static built-in commands
+  ├─ getDynamicSkills()       → Session-discovered skills
+  ├─ Filter by availability   → Auth provider gating
+  ├─ Filter by isEnabled()    → Feature flag gating
+  └─ Dedupe + sort
+</code></pre></div></div>
+
+<h3 id="83-remote-and-bridge-filtering">8.3 Remote and Bridge Filtering</h3>
+
+<p>Commands are pre-filtered based on execution context:</p>
+
+<ul>
+  <li><strong>Remote mode</strong> — Only <code class="language-plaintext highlighter-rouge">REMOTE_SAFE_COMMANDS</code> (session, exit, clear, help, theme, cost…)</li>
+  <li><strong>Bridge mode</strong> — Only <code class="language-plaintext highlighter-rouge">BRIDGE_SAFE_COMMANDS</code> (prompt-type skills, plus text-output locals like clear, cost, summary)</li>
+  <li><strong>Local JSX commands</strong> — Always blocked over bridge (can’t render React over WebSocket)</li>
+</ul>
+
+<h3 id="84-notable-command-implementations">8.4 Notable Command Implementations</h3>
+
+<h4 id="commit--git-safety-protocol"><code class="language-plaintext highlighter-rouge">/commit</code> — Git Safety Protocol</h4>
+
+<p>The commit command enforces strict safety rules:</p>
+<ul>
+  <li>Never <code class="language-plaintext highlighter-rouge">git commit --amend</code> (only create new commits)</li>
+  <li>Never skip hooks (<code class="language-plaintext highlighter-rouge">--no-verify</code>, <code class="language-plaintext highlighter-rouge">--no-gpg-sign</code>)</li>
+  <li>Never use <code class="language-plaintext highlighter-rouge">-i</code> flags (interactive mode unsupported)</li>
+  <li>Warn on secrets (<code class="language-plaintext highlighter-rouge">.env</code>, <code class="language-plaintext highlighter-rouge">credentials.json</code>)</li>
+  <li>Restricted tool access: only <code class="language-plaintext highlighter-rouge">Bash(git add:*)</code>, <code class="language-plaintext highlighter-rouge">Bash(git status:*)</code>, <code class="language-plaintext highlighter-rouge">Bash(git commit:*)</code></li>
+</ul>
+
+<h4 id="init--interactive-project-setup"><code class="language-plaintext highlighter-rouge">/init</code> — Interactive Project Setup</h4>
+
+<p>Multi-phase onboarding:</p>
+<ol>
+  <li>Ask what to set up (CLAUDE.md, skills, hooks)</li>
+  <li>Survey codebase (manifest files, README, CI, existing config)</li>
+  <li>Interview user on gaps</li>
+  <li>Synthesize proposal and create artifacts</li>
+</ol>
+
+<h4 id="doctor--self-diagnostics"><code class="language-plaintext highlighter-rouge">/doctor</code> — Self-Diagnostics</h4>
+
+<p>Checks system health: API connectivity, auth status, model availability, MCP server connections, permission configuration.</p>
+
+<h2 id="9-skills-plugins-and-mcp-the-extensibility-trifecta">9. Skills, Plugins, and MCP: The Extensibility Trifecta</h2>
+
+<h3 id="91-skills">9.1 Skills</h3>
+
+<p>Skills are markdown-based prompt templates with frontmatter metadata:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nn">---</span>
+<span class="na">name</span><span class="pi">:</span> <span class="s">my-skill</span>
+<span class="na">description</span><span class="pi">:</span> <span class="s">What this skill does</span>
+<span class="na">whenToUse</span><span class="pi">:</span> <span class="s">When Claude should invoke it</span>
+<span class="na">allowedTools</span><span class="pi">:</span> <span class="pi">[</span><span class="nv">Bash</span><span class="pi">,</span> <span class="nv">Read</span><span class="pi">,</span> <span class="nv">Edit</span><span class="pi">]</span>
+<span class="na">model</span><span class="pi">:</span> <span class="s">claude-sonnet-4-6</span>
+<span class="na">userInvocable</span><span class="pi">:</span> <span class="no">true</span>
+<span class="nn">---</span>
+
+<span class="s">Skill prompt content here...</span>
+</code></pre></div></div>
+
+<p><strong>Discovery sources (5):</strong></p>
+
+<ol>
+  <li><code class="language-plaintext highlighter-rouge">.claude/skills/</code> — Project-level skills</li>
+  <li><code class="language-plaintext highlighter-rouge">~/.claude/skills/</code> — User-level skills</li>
+  <li>Bundled skills — Compiled into the binary</li>
+  <li>Plugin skills — From installed plugins</li>
+  <li>MCP skill builders — Auto-generated from MCP servers with Prompt capability</li>
+</ol>
+
+<p><strong>Forked execution:</strong> Skills with <code class="language-plaintext highlighter-rouge">context: 'fork'</code> run in isolated subagents with their own token budgets, preventing large skills from consuming session context.</p>
+
+<p><strong>Bundled skills</strong> support lazy extraction of reference files to disk with per-process nonce-based path protection (defends against symlink/TOCTOU attacks).</p>
+
+<h3 id="92-plugins">9.2 Plugins</h3>
+
+<p>Plugins bundle skills, hooks, and MCP servers:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Plugin
+├─ Skills (markdown files)
+├─ Hooks (pre/post tool execution)
+├─ MCP Servers (tool providers)
+└─ Options (user-configurable variables)
+</code></pre></div></div>
+
+<p><strong>Types:</strong></p>
+<ul>
+  <li><strong>Built-in plugins</strong> — Pre-installed, togglable, <code class="language-plaintext highlighter-rouge">{name}@builtin</code></li>
+  <li><strong>Marketplace plugins</strong> — Installed to <code class="language-plaintext highlighter-rouge">~/.claude/plugins</code>, versioned</li>
+  <li><strong>Project plugins</strong> — <code class="language-plaintext highlighter-rouge">--plugin-dir</code> for session-only plugins</li>
+</ul>
+
+<p>Plugin variables are substituted into prompts at invocation time via <code class="language-plaintext highlighter-rouge">substitutePluginVariables()</code>.</p>
+
+<h3 id="93-model-context-protocol-mcp">9.3 Model Context Protocol (MCP)</h3>
+
+<p>MCP is the primary extensibility mechanism for bringing external tools into Claude Code.</p>
+
+<p><strong>Supported transports:</strong></p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">stdio</code> — Local subprocess</li>
+  <li><code class="language-plaintext highlighter-rouge">sse</code> / <code class="language-plaintext highlighter-rouge">http</code> / <code class="language-plaintext highlighter-rouge">ws</code> — Network-based (with optional OAuth/XAA)</li>
+  <li><code class="language-plaintext highlighter-rouge">sdk</code> — Embedded SDK</li>
+  <li><code class="language-plaintext highlighter-rouge">claudeai-proxy</code> — Claude.ai tunnel</li>
+</ul>
+
+<p><strong>Config scopes (priority order):</strong></p>
+<ol>
+  <li><code class="language-plaintext highlighter-rouge">local</code> — <code class="language-plaintext highlighter-rouge">.mcp.json</code> in project root</li>
+  <li><code class="language-plaintext highlighter-rouge">project</code> — <code class="language-plaintext highlighter-rouge">.claude/.mcp.json</code></li>
+  <li><code class="language-plaintext highlighter-rouge">user</code> — <code class="language-plaintext highlighter-rouge">~/.claude/.mcp.json</code></li>
+  <li><code class="language-plaintext highlighter-rouge">userSettings</code> — <code class="language-plaintext highlighter-rouge">settings.json</code> mcpServers</li>
+  <li><code class="language-plaintext highlighter-rouge">policySettings</code> — Managed organizational policy</li>
+  <li><code class="language-plaintext highlighter-rouge">enterprise</code> — Enterprise-managed</li>
+  <li><code class="language-plaintext highlighter-rouge">claudeai</code> — Claude.ai-managed</li>
+  <li><code class="language-plaintext highlighter-rouge">dynamic</code> — Runtime-injected</li>
+</ol>
+
+<p><strong>Connection lifecycle:</strong></p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MCPServerConnection =
+  | ConnectedMCPServer     → Ready to use
+  | FailedMCPServer        → Connection error
+  | NeedsAuthMCPServer     → Awaiting OAuth
+  | PendingMCPServer       → Reconnecting (max attempts)
+  | DisabledMCPServer      → Explicitly disabled
+</code></pre></div></div>
+
+<p>MCP tools are normalized and prefixed: <code class="language-plaintext highlighter-rouge">mcp__server__toolname</code>. They receive the same permission checks, deny rules, and analytics as built-in tools.</p>
+
+<h2 id="10-context-management-fighting-the-token-limit">10. Context Management: Fighting the Token Limit</h2>
+
+<p>With conversations that can last hours and generate hundreds of tool calls, managing the context window is critical. Claude Code uses a multi-strategy approach.</p>
+
+<h3 id="101-auto-compaction">10.1 Auto-Compaction</h3>
+
+<p>When token count exceeds <code class="language-plaintext highlighter-rouge">context_window - 13,000</code>:</p>
+
+<ol>
+  <li>Strip images/documents from older messages (replace with <code class="language-plaintext highlighter-rouge">[image]</code> markers)</li>
+  <li>Group messages by API round (assistant + tool results)</li>
+  <li>Call the compaction model to generate a summary</li>
+  <li>Replace old messages with a <code class="language-plaintext highlighter-rouge">CompactBoundaryMessage</code></li>
+  <li>Re-inject up to 5 files + skills post-compaction (50K token budget for files, 25K for skills)</li>
+</ol>
+
+<p>A circuit breaker prevents thrashing: max 3 consecutive compaction failures before giving up.</p>
+
+<h3 id="102-microcompaction">10.2 Microcompaction</h3>
+
+<p>Lighter-weight compression for tool results:</p>
+
+<ul>
+  <li><strong>Time-based</strong> — Clear tool results older than a TTL</li>
+  <li><strong>Size-based</strong> — Truncate when accumulated tool result tokens exceed threshold</li>
+  <li><strong>Tool-specific</strong> — Only compacts: FileRead, Bash, Grep, Glob, WebSearch, WebFetch, FileEdit, FileWrite</li>
+  <li><strong>Cache-aware</strong> — A “cached” variant preserves prompt cache integrity via <code class="language-plaintext highlighter-rouge">CacheEditsBlock</code></li>
+</ul>
+
+<h3 id="103-snip-compaction">10.3 Snip Compaction</h3>
+
+<p>A history truncation strategy (feature-gated):</p>
+
+<ul>
+  <li>Remove old messages beyond a snip boundary</li>
+  <li>Preserve the assistant’s “protected tail” for context continuity</li>
+  <li>Track tokens freed for accurate token budget calculations</li>
+  <li>Full history preserved in REPL for UI scrollback (non-destructive)</li>
+</ul>
+
+<h3 id="104-context-collapse">10.4 Context Collapse</h3>
+
+<p>Staged collapses are committed lazily — only when the API returns a 413 (prompt too long):</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>API 413 → Collapse drain (commit staged collapses)
+        → If insufficient → Reactive compact (full summarization)
+        → If still insufficient → Surface error to user
+</code></pre></div></div>
+
+<h3 id="105-system-context">10.5 System Context</h3>
+
+<p>Two tiers of context are injected into every request:</p>
+
+<p><strong>System context</strong> (memoized per session):</p>
+<ul>
+  <li>Git status (branch, recent commits, file status — truncated at 2000 chars)</li>
+  <li>Cache breaker (optional debug injection)</li>
+</ul>
+
+<p><strong>User context</strong> (memoized per session):</p>
+<ul>
+  <li>CLAUDE.md file contents (auto-discovered from project + parent directories)</li>
+  <li>Current date (ISO format)</li>
+</ul>
+
+<h2 id="11-state-management-immutable-store-for-a-mutable-world">11. State Management: Immutable Store for a Mutable World</h2>
+
+<h3 id="111-the-store">11.1 The Store</h3>
+
+<p>Claude Code uses a minimal, Zustand-like store:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">type</span> <span class="nx">Store</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="na">getState</span><span class="p">:</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="nx">T</span>
+  <span class="na">setState</span><span class="p">:</span> <span class="p">(</span><span class="na">updater</span><span class="p">:</span> <span class="p">(</span><span class="na">prev</span><span class="p">:</span> <span class="nx">T</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="nx">T</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="k">void</span>
+  <span class="na">subscribe</span><span class="p">:</span> <span class="p">(</span><span class="na">listener</span><span class="p">:</span> <span class="nx">Listener</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="k">void</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>No middleware</li>
+  <li>Synchronous updates</li>
+  <li>Identity comparison (<code class="language-plaintext highlighter-rouge">Object.is</code>) gates listener invocation</li>
+  <li>React integration via <code class="language-plaintext highlighter-rouge">useSyncExternalStore</code></li>
+</ul>
+
+<h3 id="112-appstate-the-unified-state-object">11.2 AppState: The Unified State Object</h3>
+
+<p>The AppState object contains everything:</p>
+
+<p><strong>Core settings:</strong></p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">settings</code> — User preferences (theme, model, etc.)</li>
+  <li><code class="language-plaintext highlighter-rouge">mainLoopModel</code> — Current AI model for the session</li>
+  <li><code class="language-plaintext highlighter-rouge">toolPermissionContext</code> — Safety mode and rules</li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code class="language-plaintext highlighter-rouge">expandedView</code> — ‘none’</td>
+          <td>‘tasks’</td>
+          <td>‘teammates’</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+</ul>
+
+<p><strong>Bridge state</strong> (Claude.ai integration):</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">replBridgeEnabled</code> / <code class="language-plaintext highlighter-rouge">replBridgeConnected</code> / <code class="language-plaintext highlighter-rouge">replBridgeSessionActive</code></li>
+  <li><code class="language-plaintext highlighter-rouge">replBridgeConnectUrl</code> / <code class="language-plaintext highlighter-rouge">replBridgeError</code></li>
+</ul>
+
+<p><strong>Multi-agent state:</strong></p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">tasks: { [taskId: string]: TaskState }</code></li>
+  <li><code class="language-plaintext highlighter-rouge">agentNameRegistry: Map&lt;string, AgentId&gt;</code></li>
+  <li><code class="language-plaintext highlighter-rouge">foregroundedTaskId</code> / <code class="language-plaintext highlighter-rouge">viewingAgentTaskId</code></li>
+</ul>
+
+<p><strong>MCP state:</strong></p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">mcp.clients: MCPServerConnection[]</code></li>
+  <li><code class="language-plaintext highlighter-rouge">mcp.tools</code>, <code class="language-plaintext highlighter-rouge">mcp.commands</code>, <code class="language-plaintext highlighter-rouge">mcp.resources</code></li>
+</ul>
+
+<p><strong>Speculation state</strong> (parallel model execution):</p>
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">type</span> <span class="nx">SpeculationState</span> <span class="o">=</span>
+  <span class="o">|</span> <span class="p">{</span> <span class="na">status</span><span class="p">:</span> <span class="dl">'</span><span class="s1">idle</span><span class="dl">'</span> <span class="p">}</span>
+  <span class="o">|</span> <span class="p">{</span> <span class="na">status</span><span class="p">:</span> <span class="dl">'</span><span class="s1">active</span><span class="dl">'</span><span class="p">,</span> <span class="nx">messagesRef</span><span class="p">,</span> <span class="nx">writtenPathsRef</span><span class="p">,</span> <span class="nx">boundary</span><span class="p">,</span> <span class="nx">isPipelined</span> <span class="p">}</span>
+</code></pre></div></div>
+
+<p>Speculation is a latency optimization: while the user is still typing, the model begins generating a response speculatively. File writes go to an <strong>overlay filesystem</strong> (<code class="language-plaintext highlighter-rouge">writtenPathsRef</code>), and on completion, the overlay is either committed (if the user’s actual input matches the speculation boundary) or discarded. <code class="language-plaintext highlighter-rouge">isPipelined</code> indicates whether a suggestion was already generated and is queued for display.</p>
+
+<h3 id="113-centralized-side-effects">11.3 Centralized Side Effects</h3>
+
+<p>All state mutations that affect external systems flow through <code class="language-plaintext highlighter-rouge">onChangeAppState()</code>:</p>
+
+<ul>
+  <li>Permission mode changes → Notify CCR bridge</li>
+  <li>Model changes → Persist to user settings</li>
+  <li>Settings mutations → Clear auth caches</li>
+  <li>View changes → Persist UI state</li>
+</ul>
+
+<p>One choke point, no scattered side effects.</p>
+
+<h2 id="12-session-persistence-and-history">12. Session Persistence and History</h2>
+
+<h3 id="121-transcript-recording">12.1 Transcript Recording</h3>
+
+<p>The engine records transcripts with ordering guarantees:</p>
+
+<ul>
+  <li><strong>Assistant messages</strong> — Fire-and-forget (lazy JSON stringify with 100ms drain)</li>
+  <li><strong>User/boundary messages</strong> — Blocking await (ordering guarantee)</li>
+  <li><strong>Pre-compact flush</strong> — Writes preserved segment before compaction boundary</li>
+</ul>
+
+<p>Even if the process is killed mid-request, the conversation is resumable from the last recorded transcript.</p>
+
+<h3 id="122-history-system">12.2 History System</h3>
+
+<p>Two-level history with deduplication:</p>
+
+<p><strong>In-memory:</strong> <code class="language-plaintext highlighter-rouge">pendingEntries[]</code> — Queue before flush to disk</p>
+
+<p><strong>On-disk:</strong> <code class="language-plaintext highlighter-rouge">~/.claude/history.jsonl</code> — Append-only log</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">type</span> <span class="nx">LogEntry</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="na">display</span><span class="p">:</span> <span class="kr">string</span>                    <span class="c1">// Formatted prompt for Ctrl+R picker</span>
+  <span class="na">project</span><span class="p">:</span> <span class="kr">string</span>                    <span class="c1">// Current project root</span>
+  <span class="na">sessionId</span><span class="p">:</span> <span class="nx">SessionId</span>
+  <span class="na">timestamp</span><span class="p">:</span> <span class="kr">number</span>
+  <span class="nx">pastedContents</span><span class="p">?:</span> <span class="nb">Record</span><span class="o">&lt;</span><span class="kr">number</span><span class="p">,</span> <span class="nx">StoredPastedContent</span><span class="o">&gt;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><strong>Key algorithms:</strong></p>
+<ul>
+  <li>Dedup by display text (newest first) for Ctrl+R</li>
+  <li>Current-session-first ordering (up-arrow doesn’t interleave sessions)</li>
+  <li>Small pastes (&lt;1KB) inlined; large pastes stored with hash references</li>
+</ul>
+
+<h3 id="123-cost-state-persistence">12.3 Cost State Persistence</h3>
+
+<p>Session costs survive process restarts:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">getStoredSessionCosts</span><span class="p">()</span>       <span class="c1">// Retrieve if session ID matches</span>
+<span class="nx">saveCurrentSessionCosts</span><span class="p">()</span>     <span class="c1">// Persist before session switch</span>
+<span class="nx">restoreCostStateForSession</span><span class="p">()</span>  <span class="c1">// Restore on resume (validates session ID)</span>
+</code></pre></div></div>
+
+<h2 id="13-multi-agent-architecture-subagents-swarms-and-worktrees">13. Multi-Agent Architecture: Subagents, Swarms, and Worktrees</h2>
+
+<p><img src="/assets/claudecode/multi-agent-architecture.png" alt="Claude Code multi-agent architecture" /></p>
+
+<h3 id="131-agent-spawning">13.1 Agent Spawning</h3>
+
+<p>The <code class="language-plaintext highlighter-rouge">AgentTool</code> spawns child agents with configurable isolation:</p>
+
+<ul>
+  <li><strong>Default</strong> — Shared filesystem, separate conversation context</li>
+  <li><strong>Worktree</strong> — Isolated git branch copy, changes merged on exit</li>
+  <li><strong>Remote (CCR)</strong> — Runs on a separate machine</li>
+</ul>
+
+<p>Agents are addressable by name:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Model: "Ask the test-runner agent to run the suite"
+  → SendMessage(to: "test-runner", message: "Run the test suite")
+</code></pre></div></div>
+
+<h3 id="132-task-system">13.2 Task System</h3>
+
+<p>Background tasks use file-based IPC with concurrent-session locking:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">type</span> <span class="nx">TaskType</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">local_bash</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">local_agent</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">remote_agent</span><span class="dl">'</span>
+              <span class="o">|</span> <span class="dl">'</span><span class="s1">in_process_teammate</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">local_workflow</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">monitor_mcp</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">dream</span><span class="dl">'</span>
+
+<span class="kd">type</span> <span class="nx">TaskStatus</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">pending</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">running</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">completed</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">failed</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">killed</span><span class="dl">'</span>
+</code></pre></div></div>
+
+<p>Task IDs use base-36 encoding with type prefixes (b=bash, a=agent, r=remote, etc.).</p>
+
+<p>Lock retries use 30 attempts with 5-100ms backoff (~2.6s max wait) for swarm coordination across tmux/iTerm2 panes.</p>
+
+<h3 id="133-worktree-isolation">13.3 Worktree Isolation</h3>
+
+<p><code class="language-plaintext highlighter-rouge">EnterWorktreeTool</code> / <code class="language-plaintext highlighter-rouge">ExitWorktreeTool</code> provide git-level isolation:</p>
+
+<ol>
+  <li>Create a temporary git worktree on a new branch</li>
+  <li>Agent works in the worktree (safe to make destructive changes)</li>
+  <li>On exit: keep changes (merge) or discard (clean up)</li>
+</ol>
+
+<h2 id="14-error-recovery-a-system-that-refuses-to-crash">14. Error Recovery: A System That Refuses to Crash</h2>
+
+<p><img src="/assets/claudecode/error-recovery.png" alt="Claude Code error recovery flow" /></p>
+
+<h3 id="141-api-error-recovery">14.1 API Error Recovery</h3>
+
+<p>The retry system handles transient and permanent errors differently:</p>
+
+<p><strong>Transient (retryable):</strong>
+| Error | Strategy |
+|——-|———-|
+| 529 (Overloaded) | Max 3 retries for foreground queries |
+| 429 (Rate limit) | Exponential backoff, persistent mode available |
+| ECONNRESET/EPIPE | Stale connection retry |</p>
+
+<p><strong>Permanent (fail fast):</strong>
+| Error | Strategy |
+|——-|———-|
+| 401 | OAuth refresh → retry once → clear credentials |
+| 400 | Invalid request, no retry |
+| 403 | Permission denied, no retry |</p>
+
+<p><strong>Persistent retry mode</strong> (for unattended operation):</p>
+<ul>
+  <li>Env var: <code class="language-plaintext highlighter-rouge">CLAUDE_CODE_UNATTENDED_RETRY</code></li>
+  <li>Indefinite 429/529 retries with max 5-minute backoff</li>
+  <li>30-second heartbeat keep-alive messages</li>
+</ul>
+
+<h3 id="142-prompt-too-long-recovery">14.2 Prompt-Too-Long Recovery</h3>
+
+<p>When the API returns 413:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>413 Prompt Too Long
+  ├─ 1. Collapse drain (commit staged context collapses)
+  ├─ 2. Reactive compact (generate full conversation summary)
+  └─ 3. Surface error if all paths exhausted
+</code></pre></div></div>
+
+<p>The error is <strong>withheld</strong> from the SDK until recovery paths are exhausted — the user never sees a 413 if compaction can resolve it.</p>
+
+<h3 id="143-max-output-tokens-recovery">14.3 Max Output Tokens Recovery</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>max_output_tokens stop reason
+  ├─ 1. Escalate to 64K tokens (once per turn)
+  ├─ 2. Inject meta recovery message ("Resume directly")
+  ├─ 3. Max 3 attempts before surfacing
+  └─ 4. Withhold intermediate errors
+</code></pre></div></div>
+
+<h3 id="144-model-fallback">14.4 Model Fallback</h3>
+
+<p>On persistent 529 errors:</p>
+<ol>
+  <li>Switch to fallback model (e.g., Sonnet when Opus is overloaded)</li>
+  <li>Strip thinking blocks (model-bound signatures)</li>
+  <li>Log fallback event with chain ID</li>
+  <li>Yield system message about the switch</li>
+</ol>
+
+<h3 id="145-streaming-fallback">14.5 Streaming Fallback</h3>
+
+<p>If streaming fails mid-response:</p>
+<ol>
+  <li>Retry with non-streaming request</li>
+  <li>Tombstone orphaned messages</li>
+  <li>Clear assistant messages to restart the turn</li>
+  <li>Fresh tool executor to prevent orphan results</li>
+</ol>
+
+<h2 id="15-cost-tracking-and-telemetry">15. Cost Tracking and Telemetry</h2>
+
+<h3 id="151-usage-accumulation">15.1 Usage Accumulation</h3>
+
+<p>Per-model tracking:</p>
+<ul>
+  <li>Input tokens, output tokens</li>
+  <li>Cache read/write tokens</li>
+  <li>Web search requests</li>
+  <li>USD cost (calculated via <code class="language-plaintext highlighter-rouge">calculateUSDCost()</code>)</li>
+</ul>
+
+<p>Advisor model costs are recursively accumulated from <code class="language-plaintext highlighter-rouge">getAdvisorUsage()</code>.</p>
+
+<h3 id="152-display">15.2 Display</h3>
+
+<p><code class="language-plaintext highlighter-rouge">formatTotalCost()</code> produces a multi-line report:</p>
+<ul>
+  <li>Total cost</li>
+  <li>Per-model breakdown</li>
+  <li>API/wall-clock duration</li>
+  <li>Lines of code changed</li>
+  <li>Unknown model cost disclaimer</li>
+</ul>
+
+<h3 id="153-telemetry">15.3 Telemetry</h3>
+
+<p>Analytics use a decoupled sink pattern:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">attachAnalyticsSink()</code> called during startup</li>
+  <li>Events queued until sink is available (prevents import cycles)</li>
+  <li>Datadog fanout + first-party event logging</li>
+  <li>PII-tagged fields for compliance</li>
+  <li>OpenTelemetry spans for LLM request tracing</li>
+</ul>
+
+<p><strong>Gateway detection</strong> identifies proxy infrastructure from response headers: LiteLLM, Helicone, Portkey, Cloudflare AI Gateway, Kong, Braintrust, Databricks.</p>
+
+<h2 id="16-execution-modes-one-codebase-many-faces">16. Execution Modes: One Codebase, Many Faces</h2>
+
+<p>Claude Code runs in multiple modes from a single codebase:</p>
+
+<h3 id="interactive-cli-default">Interactive CLI (Default)</h3>
+
+<p>Full React terminal UI with REPL loop, text selection, mouse support, and rich rendering.</p>
+
+<h3 id="non-interactive--headless">Non-Interactive / Headless</h3>
+
+<p><code class="language-plaintext highlighter-rouge">--print</code> mode outputs the response to stdout. <code class="language-plaintext highlighter-rouge">--output</code> saves to a file. No user interaction — suitable for scripts, CI/CD, and piping.</p>
+
+<h3 id="mcp-server-mode">MCP Server Mode</h3>
+
+<p><code class="language-plaintext highlighter-rouge">claude mcp serve</code> runs Claude Code as an MCP server, exposing its tools to other MCP clients.</p>
+
+<h3 id="bridge-mode-claudeai-integration">Bridge Mode (Claude.ai Integration)</h3>
+
+<p>WebSocket connection to claude.ai for remote control:</p>
+<ul>
+  <li>CLI sends status updates to the web UI</li>
+  <li>Web UI sends control commands back</li>
+  <li>Bidirectional message adaptation (SDK format ↔ local format)</li>
+  <li>Viewer-only mode for read-only clients</li>
+</ul>
+
+<h3 id="remote--teleport">Remote / Teleport</h3>
+
+<p><code class="language-plaintext highlighter-rouge">claude remote-control</code> exposes the CLI as a WebSocket server. Users can connect via claude.ai’s web interface or QR code.</p>
+
+<h3 id="local-agent-mode">Local Agent Mode</h3>
+
+<p>Subprocesses spawned for multi-agent swarms. Each agent gets its own session, AppState, and task directory. Communication via file I/O.</p>
+
+<h3 id="coordinator-mode">Coordinator Mode</h3>
+
+<p>Orchestrates multiple agents working in parallel on different aspects of a task. (See dedicated section below.)</p>
+
+<h2 id="17-buddy-a-tamagotchi-style-ai-pet">17. BUDDY: A Tamagotchi-Style AI Pet</h2>
+
+<p>One of the most surprising finds in the codebase: a fully implemented <strong>Tamagotchi-style virtual companion</strong> that lives beside the user’s input box. What started as an April Fools feature (teaser window: April 1-7, 2026) became a real, permanent feature.</p>
+
+<h3 id="171-how-your-buddy-is-born">17.1 How Your Buddy Is Born</h3>
+
+<p>Every companion is <strong>deterministically generated</strong> from the user’s account ID using a Mulberry32 seeded PRNG:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Mulberry32 — tiny seeded PRNG, good enough for picking ducks</span>
+<span class="kd">function</span> <span class="nx">mulberry32</span><span class="p">(</span><span class="nx">seed</span><span class="p">:</span> <span class="kr">number</span><span class="p">):</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="kr">number</span> <span class="p">{</span>
+  <span class="kd">let</span> <span class="nx">a</span> <span class="o">=</span> <span class="nx">seed</span> <span class="o">&gt;&gt;&gt;</span> <span class="mi">0</span>
+  <span class="k">return</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="nx">a</span> <span class="o">|=</span> <span class="mi">0</span>
+    <span class="nx">a</span> <span class="o">=</span> <span class="p">(</span><span class="nx">a</span> <span class="o">+</span> <span class="mh">0x6d2b79f5</span><span class="p">)</span> <span class="o">|</span> <span class="mi">0</span>
+    <span class="kd">let</span> <span class="nx">t</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">imul</span><span class="p">(</span><span class="nx">a</span> <span class="o">^</span> <span class="p">(</span><span class="nx">a</span> <span class="o">&gt;&gt;&gt;</span> <span class="mi">15</span><span class="p">),</span> <span class="mi">1</span> <span class="o">|</span> <span class="nx">a</span><span class="p">)</span>
+    <span class="nx">t</span> <span class="o">=</span> <span class="p">(</span><span class="nx">t</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">imul</span><span class="p">(</span><span class="nx">t</span> <span class="o">^</span> <span class="p">(</span><span class="nx">t</span> <span class="o">&gt;&gt;&gt;</span> <span class="mi">7</span><span class="p">),</span> <span class="mi">61</span> <span class="o">|</span> <span class="nx">t</span><span class="p">))</span> <span class="o">^</span> <span class="nx">t</span>
+    <span class="k">return</span> <span class="p">((</span><span class="nx">t</span> <span class="o">^</span> <span class="p">(</span><span class="nx">t</span> <span class="o">&gt;&gt;&gt;</span> <span class="mi">14</span><span class="p">))</span> <span class="o">&gt;&gt;&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4294967296</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>The seed is <code class="language-plaintext highlighter-rouge">hash(userId + 'friend-2026-401')</code>. This means your companion is unique to you but identical across devices and sessions — you always get the same one.</p>
+
+<h3 id="172-species-rarity-and-cosmetics">17.2 Species, Rarity, and Cosmetics</h3>
+
+<p><strong>18 species:</strong> duck, goose, blob, cat, dragon, octopus, owl, penguin, turtle, snail, ghost, axolotl, capybara, cactus, robot, rabbit, mushroom, chonk</p>
+
+<p>Species names are encoded as <code class="language-plaintext highlighter-rouge">String.fromCharCode(0x64,0x75,0x63,0x6b)</code> rather than string literals to avoid tripping an excluded-strings build check (one species name collides with a model codename).</p>
+
+<p><strong>Rarity tiers</strong> (weighted random):</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Tier</th>
+      <th>Weight</th>
+      <th>Stat Floor</th>
+      <th>Hat?</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Common</td>
+      <td>60%</td>
+      <td>5</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <td>Uncommon</td>
+      <td>25%</td>
+      <td>15</td>
+      <td>Random</td>
+    </tr>
+    <tr>
+      <td>Rare</td>
+      <td>10%</td>
+      <td>25</td>
+      <td>Random</td>
+    </tr>
+    <tr>
+      <td>Epic</td>
+      <td>4%</td>
+      <td>35</td>
+      <td>Random</td>
+    </tr>
+    <tr>
+      <td>Legendary</td>
+      <td>1%</td>
+      <td>50</td>
+      <td>Random</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Cosmetics:</strong></p>
+<ul>
+  <li><strong>6 eye styles:</strong> <code class="language-plaintext highlighter-rouge">·</code>, <code class="language-plaintext highlighter-rouge">+</code>, <code class="language-plaintext highlighter-rouge">x</code>, <code class="language-plaintext highlighter-rouge">@</code>, <code class="language-plaintext highlighter-rouge">°</code>, and a special star eye</li>
+  <li><strong>8 hats:</strong> none, crown, tophat, propeller, halo, wizard, beanie, tinyduck</li>
+  <li><strong>1% shiny chance</strong> — independent of rarity</li>
+  <li><strong>5 stats:</strong> DEBUGGING, PATIENCE, CHAOS, WISDOM, SNARK — one peak stat, one dump stat, rest scattered. Higher rarity = higher stat floors.</li>
+</ul>
+
+<p>Each species star rating displays with themed colors: common (inactive), uncommon (green), rare (permission blue), epic (auto-accept purple), legendary (warning gold).</p>
+
+<h3 id="173-soul-generation">17.3 Soul Generation</h3>
+
+<p>On first “hatch,” Claude generates a unique <strong>name and personality</strong> for the companion. This is stored permanently in the user’s global config as <code class="language-plaintext highlighter-rouge">StoredCompanion</code>:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">type</span> <span class="nx">StoredCompanion</span> <span class="o">=</span> <span class="nx">CompanionSoul</span> <span class="o">&amp;</span> <span class="p">{</span> <span class="na">hatchedAt</span><span class="p">:</span> <span class="kr">number</span> <span class="p">}</span>
+<span class="kd">type</span> <span class="nx">CompanionSoul</span> <span class="o">=</span> <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span> <span class="nl">personality</span><span class="p">:</span> <span class="kr">string</span> <span class="p">}</span>
+</code></pre></div></div>
+
+<p>Critically, only the soul persists — bones (species, rarity, stats) are <strong>regenerated from the userId hash every time</strong>. This prevents users from editing their config to fake a legendary, and allows species renames without breaking stored companions.</p>
+
+<h3 id="174-sprite-animation-system">17.4 Sprite Animation System</h3>
+
+<p>Each species has <strong>3 animation frames</strong> as 5-line, 12-character-wide ASCII art:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Frame 0 (idle):     Frame 1 (fidget):   Frame 2 (rare):
+    __                   __               __
+  &lt;(· )___             &lt;(· )___         &lt;(· )___
+   (  ._&gt;               (  ._&gt;           (  .__&gt;
+    `--´                 `--´~            `--´
+</code></pre></div></div>
+
+<p>Eye placeholders <code class="language-plaintext highlighter-rouge">{E}</code> are replaced with the companion’s assigned eye character at render time. Hat lines overlay the top row (only when the species’ top row is blank).</p>
+
+<p>The <strong>idle sequence</strong> cycles at 500ms per tick:</p>
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">IDLE_SEQUENCE</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="c1">// -1 = "blink on frame 0" (eyes temporarily replaced)</span>
+</code></pre></div></div>
+
+<p>This creates a natural feel: mostly still, occasional fidgets, rare blinks.</p>
+
+<h3 id="175-speech-bubbles-and-interaction">17.5 Speech Bubbles and Interaction</h3>
+
+<p>The companion renders as a <code class="language-plaintext highlighter-rouge">CompanionSprite</code> React component positioned beside the prompt input. It features:</p>
+
+<ul>
+  <li><strong>Speech bubbles</strong> with a <code class="language-plaintext highlighter-rouge">SpeechBubble</code> component using rounded borders</li>
+  <li>Bubbles display for <strong>~10 seconds</strong> (20 ticks) then fade over the last 3 seconds</li>
+  <li><code class="language-plaintext highlighter-rouge">/buddy pet</code> triggers a <strong>floating heart animation</strong> (2.5 seconds) with hearts drifting upward</li>
+  <li>The companion can react to conversation events via <code class="language-plaintext highlighter-rouge">companionReaction</code> in AppState</li>
+  <li>When terminal is too narrow (&lt;100 cols), the full sprite is hidden and replaced with a compact face-only rendering</li>
+</ul>
+
+<p>A companion intro is injected as a special attachment into the conversation, informing Claude that a small creature named X sits beside the input box and occasionally comments in bubbles.</p>
+
+<h3 id="176-teaser-and-release-strategy">17.6 Teaser and Release Strategy</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">export</span> <span class="kd">function</span> <span class="nx">isBuddyTeaserWindow</span><span class="p">():</span> <span class="nx">boolean</span> <span class="p">{</span>
+  <span class="kd">const</span> <span class="nx">d</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">()</span>
+  <span class="k">return</span> <span class="nx">d</span><span class="p">.</span><span class="nx">getFullYear</span><span class="p">()</span> <span class="o">===</span> <span class="mi">2026</span> <span class="o">&amp;&amp;</span> <span class="nx">d</span><span class="p">.</span><span class="nx">getMonth</span><span class="p">()</span> <span class="o">===</span> <span class="mi">3</span> <span class="o">&amp;&amp;</span> <span class="nx">d</span><span class="p">.</span><span class="nx">getDate</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="mi">7</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>The teaser uses <strong>local dates, not UTC</strong> — creating a rolling 24-hour wave across timezones for sustained social media buzz rather than a single UTC-midnight spike. During the teaser window, users who haven’t hatched a companion see a rainbow-colored <code class="language-plaintext highlighter-rouge">/buddy</code> notification.</p>
+
+<h2 id="18-kairos-persistent-assistant-mode-and-auto-dreaming">18. KAIROS: Persistent Assistant Mode and Auto-Dreaming</h2>
+
+<p>KAIROS (feature-flagged as <code class="language-plaintext highlighter-rouge">KAIROS</code>) is a complete alternate UX where Claude becomes a <strong>long-lived autonomous agent</strong> that persists across sessions — the “Always-On Claude.”</p>
+
+<h3 id="181-auto-dreaming-memory-consolidation">18.1 Auto-Dreaming: Memory Consolidation</h3>
+
+<p>The most concrete KAIROS subsystem in the codebase is the <strong>auto-dream</strong> system (<code class="language-plaintext highlighter-rouge">services/autoDream/</code>). This is a background memory consolidation agent that runs as a forked subagent.</p>
+
+<p><strong>Gate order</strong> (cheapest checks first):</p>
+<ol>
+  <li><strong>Time gate:</strong> Hours since last consolidation &gt;= <code class="language-plaintext highlighter-rouge">minHours</code> (default: 24h)</li>
+  <li><strong>Session gate:</strong> Number of transcript sessions since last consolidation &gt;= <code class="language-plaintext highlighter-rouge">minSessions</code> (default: 5)</li>
+  <li><strong>Lock gate:</strong> No other process is mid-consolidation (file lock with mtime-based conflict detection)</li>
+  <li><strong>Scan throttle:</strong> Even when the time gate passes, session scanning is throttled to every 10 minutes</li>
+</ol>
+
+<p><strong>The 4-phase dream prompt:</strong></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Phase 1 — Orient
+  └─ ls the memory directory, read the index, skim existing topic files
+
+Phase 2 — Gather recent signal
+  └─ Check daily logs, find drifted memories, grep transcripts narrowly
+
+Phase 3 — Consolidate
+  └─ Write/update memory files, merge duplicates, convert relative dates
+
+Phase 4 — Prune and index
+  └─ Update the entrypoint index (max ~25KB), remove stale pointers
+</code></pre></div></div>
+
+<p><strong>Tool constraints for dream runs:</strong> Bash is restricted to <strong>read-only commands only</strong> — <code class="language-plaintext highlighter-rouge">ls</code>, <code class="language-plaintext highlighter-rouge">find</code>, <code class="language-plaintext highlighter-rouge">grep</code>, <code class="language-plaintext highlighter-rouge">cat</code>, <code class="language-plaintext highlighter-rouge">stat</code>, <code class="language-plaintext highlighter-rouge">wc</code>, <code class="language-plaintext highlighter-rouge">head</code>, <code class="language-plaintext highlighter-rouge">tail</code>. Write operations are denied. File edits go through the normal Edit/Write tools with permission via <code class="language-plaintext highlighter-rouge">createAutoMemCanUseTool()</code>.</p>
+
+<p><strong>Dream task lifecycle:</strong></p>
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">type</span> <span class="nx">DreamTaskState</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">dream</span><span class="dl">'</span>
+  <span class="na">phase</span><span class="p">:</span> <span class="dl">'</span><span class="s1">starting</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">updating</span><span class="dl">'</span>    <span class="c1">// Flips when first Edit/Write lands</span>
+  <span class="na">sessionsReviewing</span><span class="p">:</span> <span class="kr">number</span>
+  <span class="na">filesTouched</span><span class="p">:</span> <span class="kr">string</span><span class="p">[]</span>             <span class="c1">// Paths observed in Edit/Write tool_use</span>
+  <span class="na">turns</span><span class="p">:</span> <span class="nx">DreamTurn</span><span class="p">[]</span>                 <span class="c1">// Last 30 assistant turns (rolling window)</span>
+  <span class="nx">abortController</span><span class="p">?:</span> <span class="nx">AbortController</span>
+  <span class="na">priorMtime</span><span class="p">:</span> <span class="kr">number</span>                 <span class="c1">// For lock rollback on failure</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Users can kill a running dream from the background tasks dialog (Shift+Down). On kill, the lock mtime is rewound so the next session can retry.</p>
+
+<h3 id="182-kairos-integration-points">18.2 KAIROS Integration Points</h3>
+
+<p>KAIROS is referenced throughout the codebase:</p>
+<ul>
+  <li><strong><code class="language-plaintext highlighter-rouge">getKairosActive()</code></strong> in bootstrap state — gates whether KAIROS mode is active</li>
+  <li>Auto-dream is <strong>disabled</strong> in KAIROS mode (KAIROS uses its own disk-skill dream variant)</li>
+  <li>Brief mode (<code class="language-plaintext highlighter-rouge">BriefTool</code>) — all output goes through <code class="language-plaintext highlighter-rouge">SendUserMessage</code> tool (structured markdown + attachments + status)</li>
+  <li>Proactive <code class="language-plaintext highlighter-rouge">&lt;tick&gt;</code> prompts — periodic check-ins where Claude decides what to do next</li>
+  <li>15-second blocking budget — commands exceeding 15s are auto-backgrounded</li>
+  <li>Exclusive tools: <code class="language-plaintext highlighter-rouge">SendUserFile</code>, <code class="language-plaintext highlighter-rouge">PushNotification</code>, <code class="language-plaintext highlighter-rouge">SubscribePR</code> (GitHub webhook subscriptions), <code class="language-plaintext highlighter-rouge">SleepTool</code></li>
+  <li>Append-only daily logs at <code class="language-plaintext highlighter-rouge">~/.claude/projects/&lt;slug&gt;/memory/logs/YYYY/MM/YYYY-MM-DD.md</code></li>
+  <li>Midnight boundary handling — flushes yesterday’s transcript on date change so the dream process can find it</li>
+</ul>
+
+<h3 id="183-session-history-assistant-mode">18.3 Session History (Assistant Mode)</h3>
+
+<p><code class="language-plaintext highlighter-rouge">assistant/sessionHistory.ts</code> provides paginated session event retrieval for KAIROS:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">type</span> <span class="nx">HistoryPage</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="na">events</span><span class="p">:</span> <span class="nx">SDKMessage</span><span class="p">[]</span>
+  <span class="na">firstId</span><span class="p">:</span> <span class="kr">string</span> <span class="o">|</span> <span class="kc">null</span>    <span class="c1">// Cursor for next-older page</span>
+  <span class="na">hasMore</span><span class="p">:</span> <span class="nx">boolean</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Uses OAuth-authenticated API calls to CCR (Claude Code Remote) to fetch session transcripts. Pagination goes backwards (newest → oldest) with 100 events per page and 15-second timeout per request.</p>
+
+<h2 id="19-ultraplan-remote-planning-sessions">19. ULTRAPLAN: Remote Planning Sessions</h2>
+
+<p>ULTRAPLAN is an interactive planning system that farms out complex exploration to a <strong>remote Claude Code instance (CCR)</strong> for up to 30 minutes.</p>
+
+<p><img src="/assets/claudecode/ultraplan.png" alt="ULTRAPLAN remote planning flow" /></p>
+
+<h3 id="191-how-it-works">19.1 How It Works</h3>
+
+<ol>
+  <li>User types “ultraplan” (keyword detection, not slash command) or uses <code class="language-plaintext highlighter-rouge">/ultraplan</code></li>
+  <li>A remote CCR session is created with plan mode pre-configured</li>
+  <li>The CLI polls the remote session every <strong>3 seconds</strong> for up to 30 minutes</li>
+  <li>Remote Claude explores, plans, and calls <code class="language-plaintext highlighter-rouge">ExitPlanMode</code> when ready</li>
+  <li>User approves or rejects the plan <strong>in the browser</strong> (claude.ai)</li>
+  <li>Rejected plans loop back for iteration</li>
+</ol>
+
+<h3 id="192-keyword-detection">19.2 Keyword Detection</h3>
+
+<p>The keyword trigger system (<code class="language-plaintext highlighter-rouge">utils/ultraplan/keyword.ts</code>) is remarkably sophisticated. It finds “ultraplan” in user input while avoiding false positives:</p>
+
+<p><strong>Skipped contexts:</strong></p>
+<ul>
+  <li>Inside paired delimiters (backticks, quotes, brackets, angle brackets)</li>
+  <li>Path-like context (<code class="language-plaintext highlighter-rouge">src/ultraplan/foo.ts</code>, <code class="language-plaintext highlighter-rouge">ultraplan.tsx</code>)</li>
+  <li>Identifier-like context (<code class="language-plaintext highlighter-rouge">--ultraplan-mode</code>, <code class="language-plaintext highlighter-rouge">ultraplan-s</code>)</li>
+  <li>Followed by <code class="language-plaintext highlighter-rouge">?</code> (questions about the feature shouldn’t invoke it)</li>
+  <li>Slash command input (<code class="language-plaintext highlighter-rouge">/rename ultraplan foo</code> runs <code class="language-plaintext highlighter-rouge">/rename</code>, not ultraplan)</li>
+</ul>
+
+<p>When triggered, “ultraplan” is replaced with “plan” in the forwarded prompt to keep it grammatical: <code class="language-plaintext highlighter-rouge">"please ultraplan this" → "please plan this"</code>.</p>
+
+<h3 id="193-two-execution-paths-on-approval">19.3 Two Execution Paths on Approval</h3>
+
+<p>On approval, the user chooses one of two paths:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Path</th>
+      <th>What Happens</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>“remote”</strong></td>
+      <td>Execute the plan in the cloud CCR instance</td>
+    </tr>
+    <tr>
+      <td><strong>“teleport to terminal”</strong></td>
+      <td>Archive the remote session, execute locally</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The teleport path uses a sentinel string <code class="language-plaintext highlighter-rouge">__ULTRAPLAN_TELEPORT_LOCAL__</code> embedded in the browser’s rejection feedback. The rejection keeps the remote in plan mode, but the plan text is extracted from the feedback and executed locally.</p>
+
+<h3 id="194-event-stream-scanning">19.4 Event Stream Scanning</h3>
+
+<p>The <code class="language-plaintext highlighter-rouge">ExitPlanModeScanner</code> class is a <strong>pure stateful classifier</strong> for the CCR event stream:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">type</span> <span class="nx">ScanResult</span> <span class="o">=</span>
+  <span class="o">|</span> <span class="p">{</span> <span class="na">kind</span><span class="p">:</span> <span class="dl">'</span><span class="s1">approved</span><span class="dl">'</span><span class="p">;</span> <span class="nl">plan</span><span class="p">:</span> <span class="kr">string</span> <span class="p">}</span>
+  <span class="o">|</span> <span class="p">{</span> <span class="na">kind</span><span class="p">:</span> <span class="dl">'</span><span class="s1">teleport</span><span class="dl">'</span><span class="p">;</span> <span class="nl">plan</span><span class="p">:</span> <span class="kr">string</span> <span class="p">}</span>
+  <span class="o">|</span> <span class="p">{</span> <span class="na">kind</span><span class="p">:</span> <span class="dl">'</span><span class="s1">rejected</span><span class="dl">'</span><span class="p">;</span> <span class="nl">id</span><span class="p">:</span> <span class="kr">string</span> <span class="p">}</span>
+  <span class="o">|</span> <span class="p">{</span> <span class="na">kind</span><span class="p">:</span> <span class="dl">'</span><span class="s1">pending</span><span class="dl">'</span> <span class="p">}</span>
+  <span class="o">|</span> <span class="p">{</span> <span class="na">kind</span><span class="p">:</span> <span class="dl">'</span><span class="s1">terminated</span><span class="dl">'</span><span class="p">;</span> <span class="nl">subtype</span><span class="p">:</span> <span class="kr">string</span> <span class="p">}</span>
+  <span class="o">|</span> <span class="p">{</span> <span class="na">kind</span><span class="p">:</span> <span class="dl">'</span><span class="s1">unchanged</span><span class="dl">'</span> <span class="p">}</span>
+</code></pre></div></div>
+
+<p><strong>Phase tracking</strong> for the UI pill:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>running → (turn ends, no ExitPlanMode) → needs_input
+needs_input → (user replies in browser) → running
+running → (ExitPlanMode emitted) → plan_ready
+plan_ready → (rejected) → running
+plan_ready → (approved) → poll resolves, pill removed
+</code></pre></div></div>
+
+<p><strong>Resilience:</strong> The poller tolerates up to 5 consecutive network failures before aborting (a 30-minute poll makes ~600 API calls — at any nonzero failure rate, one blip is inevitable).</p>
+
+<h2 id="20-coordinator-mode-multi-agent-orchestrator">20. Coordinator Mode: Multi-Agent Orchestrator</h2>
+
+<p>Coordinator Mode (<code class="language-plaintext highlighter-rouge">CLAUDE_CODE_COORDINATOR_MODE=1</code>) transforms Claude Code from a single-agent assistant into a <strong>multi-agent orchestrator</strong> where a master coordinator directs multiple parallel workers.</p>
+
+<h3 id="201-architecture">20.1 Architecture</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Coordinator (you)
+  ├─ AgentTool → Worker A (research)     ─┐
+  ├─ AgentTool → Worker B (research)     ─┤ Run in parallel
+  ├─ AgentTool → Worker C (implement)    ─┘
+  └─ SendMessage → Continue Worker A with synthesized spec
+</code></pre></div></div>
+
+<p>The coordinator’s system prompt enforces a strict discipline:</p>
+<ul>
+  <li><strong>“Never write ‘based on your findings’“</strong> — the coordinator must synthesize worker research into specific specs with file paths, line numbers, and exactly what to change</li>
+  <li>Workers report back as <strong>XML <code class="language-plaintext highlighter-rouge">&lt;task-notification&gt;</code> messages</strong> with status, summary, result, and usage</li>
+  <li>The coordinator <strong>never polls</strong> — workers push completion notifications</li>
+  <li>Workers get isolated scratch directories (via <code class="language-plaintext highlighter-rouge">tengu_scratch</code> feature gate) for durable cross-worker knowledge</li>
+</ul>
+
+<h3 id="202-worker-capabilities">20.2 Worker Capabilities</h3>
+
+<p>Workers spawned via AgentTool have access to standard tools (or a simplified Bash/Read/Edit set in <code class="language-plaintext highlighter-rouge">CLAUDE_CODE_SIMPLE</code> mode), plus MCP tools from configured servers. The coordinator injects a <code class="language-plaintext highlighter-rouge">workerToolsContext</code> into the system prompt listing exactly which tools workers can use.</p>
+
+<h3 id="203-task-workflow">20.3 Task Workflow</h3>
+
+<p>The coordinator system prompt defines four phases:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Phase</th>
+      <th>Who</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Research</td>
+      <td>Workers (parallel)</td>
+      <td>Investigate codebase, find files</td>
+    </tr>
+    <tr>
+      <td>Synthesis</td>
+      <td><strong>Coordinator</strong></td>
+      <td>Read findings, craft implementation specs</td>
+    </tr>
+    <tr>
+      <td>Implementation</td>
+      <td>Workers</td>
+      <td>Make changes per spec, commit</td>
+    </tr>
+    <tr>
+      <td>Verification</td>
+      <td>Workers</td>
+      <td>Prove the code works (not just confirm it exists)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Concurrency rules:</strong></p>
+<ul>
+  <li>Read-only tasks (research) — run in parallel freely</li>
+  <li>Write-heavy tasks (implementation) — one at a time per set of files</li>
+  <li>Verification — can run alongside implementation on different file areas</li>
+</ul>
+
+<h3 id="204-continue-vs-spawn">20.4 Continue vs. Spawn</h3>
+
+<p>The system provides explicit guidance on when to continue an existing worker vs. spawn fresh:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Situation</th>
+      <th>Mechanism</th>
+      <th>Reason</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Research explored the exact files to edit</td>
+      <td><strong>Continue</strong></td>
+      <td>Worker already has files in context</td>
+    </tr>
+    <tr>
+      <td>Research was broad, implementation is narrow</td>
+      <td><strong>Spawn fresh</strong></td>
+      <td>Avoid exploration noise</td>
+    </tr>
+    <tr>
+      <td>Correcting a failure</td>
+      <td><strong>Continue</strong></td>
+      <td>Worker has error context</td>
+    </tr>
+    <tr>
+      <td>Verifying another worker’s code</td>
+      <td><strong>Spawn fresh</strong></td>
+      <td>Verifier needs fresh eyes</td>
+    </tr>
+    <tr>
+      <td>Wrong approach entirely</td>
+      <td><strong>Spawn fresh</strong></td>
+      <td>Wrong context pollutes retry</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="205-session-mode-matching">20.5 Session Mode Matching</h3>
+
+<p>When resuming a session, coordinator mode is automatically matched to the stored session mode:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">export</span> <span class="kd">function</span> <span class="nx">matchSessionMode</span><span class="p">(</span><span class="nx">sessionMode</span><span class="p">:</span> <span class="dl">'</span><span class="s1">coordinator</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">normal</span><span class="dl">'</span> <span class="o">|</span> <span class="kc">undefined</span><span class="p">):</span> <span class="kr">string</span> <span class="o">|</span> <span class="kc">undefined</span> <span class="p">{</span>
+  <span class="c1">// If current mode doesn't match the resumed session, flip the env var</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">sessionIsCoordinator</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">CLAUDE_CODE_COORDINATOR_MODE</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">1</span><span class="dl">'</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="k">delete</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">CLAUDE_CODE_COORDINATOR_MODE</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This prevents a normal session from being resumed in coordinator mode (or vice versa), which would cause confusion.</p>
+
+<h2 id="21-the-memory-system-persistent-ai-memory">21. The Memory System: Persistent AI Memory</h2>
+
+<p>Claude Code has a sophisticated file-based memory system (<code class="language-plaintext highlighter-rouge">memdir/</code>) that allows it to remember context across conversations — user preferences, project knowledge, feedback, and reference pointers.</p>
+
+<p><img src="/assets/claudecode/memory.png" alt="Claude Code memory system" /></p>
+
+<h3 id="211-memory-architecture">21.1 Memory Architecture</h3>
+
+<p>Memories are stored as individual markdown files with YAML frontmatter at <code class="language-plaintext highlighter-rouge">~/.claude/projects/&lt;sanitized-project-root&gt;/memory/</code>:</p>
+
+<div class="language-markdown highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nn">---</span>
+<span class="na">name</span><span class="pi">:</span> <span class="s">user_role</span>
+<span class="na">description</span><span class="pi">:</span> <span class="s">User is a senior backend engineer focused on Rust</span>
+<span class="na">type</span><span class="pi">:</span> <span class="s">user</span>
+<span class="nn">---</span>
+
+User is a senior backend engineer at Acme Corp, primarily works in Rust...
+</code></pre></div></div>
+
+<p>An index file <code class="language-plaintext highlighter-rouge">MEMORY.md</code> (max 200 lines / 25KB) serves as a table of contents — it’s loaded into every conversation’s system prompt so Claude knows what memories exist without reading them all.</p>
+
+<h3 id="212-four-memory-types">21.2 Four Memory Types</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Purpose</th>
+      <th>Example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">user</code></td>
+      <td>Role, preferences, knowledge level</td>
+      <td>“User is a data scientist, new to React”</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">feedback</code></td>
+      <td>How to approach work (corrections + confirmations)</td>
+      <td>“Don’t mock the database in integration tests”</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">project</code></td>
+      <td>Ongoing work, goals, deadlines</td>
+      <td>“Merge freeze begins 2026-03-05 for mobile release”</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">reference</code></td>
+      <td>Pointers to external systems</td>
+      <td>“Pipeline bugs tracked in Linear project INGEST”</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The system explicitly does NOT save: code patterns, architecture, git history, debugging solutions, or anything derivable from the current project state.</p>
+
+<h3 id="213-intelligent-memory-recall">21.3 Intelligent Memory Recall</h3>
+
+<p>Not all memories are loaded every turn. Instead, a <strong>Sonnet-powered relevance selector</strong> (<code class="language-plaintext highlighter-rouge">findRelevantMemories.ts</code>) runs as a side query:</p>
+
+<ol>
+  <li>Scan all <code class="language-plaintext highlighter-rouge">.md</code> files in the memory directory (max 200, newest-first)</li>
+  <li>Parse frontmatter headers (name, description, type) from the first 30 lines</li>
+  <li>Send the user’s query + memory manifest to Sonnet with structured JSON output</li>
+  <li>Sonnet returns up to 5 most relevant filenames</li>
+  <li>Those files are injected into the conversation context</li>
+</ol>
+
+<p>A clever optimization: recently-used tools are passed to the selector so it skips reference docs for tools Claude is already exercising (e.g., don’t surface MCP spawn docs when Claude is actively using the spawn tool).</p>
+
+<h3 id="214-path-security">21.4 Path Security</h3>
+
+<p>The memory path system includes robust security validation:</p>
+
+<ul>
+  <li>Rejects relative paths, root paths, UNC paths, null bytes</li>
+  <li><code class="language-plaintext highlighter-rouge">projectSettings</code> (committed to repo) is intentionally excluded from <code class="language-plaintext highlighter-rouge">autoMemoryDirectory</code> — a malicious repo could otherwise set <code class="language-plaintext highlighter-rouge">autoMemoryDirectory: "~/.ssh"</code> and gain write access to sensitive directories</li>
+  <li>All worktrees of the same git repo share one memory directory (via <code class="language-plaintext highlighter-rouge">findCanonicalGitRoot</code>)</li>
+  <li><code class="language-plaintext highlighter-rouge">CLAUDE_COWORK_MEMORY_PATH_OVERRIDE</code> for SDK/Cowork integration</li>
+</ul>
+
+<h3 id="215-team-memory">21.5 Team Memory</h3>
+
+<p>When the <code class="language-plaintext highlighter-rouge">TEAMMEM</code> feature is enabled, memories split into <strong>private</strong> (per-user) and <strong>team</strong> (shared) directories. User preferences stay private; project conventions and reference pointers default to team scope. A conflict rule prevents private feedback memories from contradicting team-level ones.</p>
+
+<h2 id="22-hooks-user-defined-automation">22. Hooks: User-Defined Automation</h2>
+
+<p>The hooks system (<code class="language-plaintext highlighter-rouge">schemas/hooks.ts</code>) lets users attach automated behaviors to Claude Code events — shell commands, LLM prompts, HTTP calls, or agent verifiers that fire before/after tool use, message submission, and more.</p>
+
+<h3 id="221-four-hook-types">22.1 Four Hook Types</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">type</span> <span class="nx">HookCommand</span> <span class="o">=</span>
+  <span class="o">|</span> <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">command</span><span class="dl">'</span><span class="p">;</span> <span class="nl">command</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span> <span class="nl">shell</span><span class="p">?:</span> <span class="dl">'</span><span class="s1">bash</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">powershell</span><span class="dl">'</span> <span class="p">}</span>
+  <span class="o">|</span> <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">prompt</span><span class="dl">'</span><span class="p">;</span> <span class="nl">prompt</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span> <span class="nl">model</span><span class="p">?:</span> <span class="kr">string</span> <span class="p">}</span>
+  <span class="o">|</span> <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">http</span><span class="dl">'</span><span class="p">;</span> <span class="nl">url</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span> <span class="nl">headers</span><span class="p">?:</span> <span class="nb">Record</span><span class="o">&lt;</span><span class="kr">string</span><span class="p">,</span> <span class="kr">string</span><span class="o">&gt;</span> <span class="p">}</span>
+  <span class="o">|</span> <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">agent</span><span class="dl">'</span><span class="p">;</span> <span class="nl">prompt</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span> <span class="nl">model</span><span class="p">?:</span> <span class="kr">string</span> <span class="p">}</span>
+</code></pre></div></div>
+
+<p><strong>Command hooks</strong> run shell commands with optional timeout, async/background execution, and one-shot mode (<code class="language-plaintext highlighter-rouge">once: true</code> — runs once then auto-removes).</p>
+
+<p><strong>Prompt hooks</strong> evaluate an LLM prompt with <code class="language-plaintext highlighter-rouge">$ARGUMENTS</code> placeholder for the hook input JSON.</p>
+
+<p><strong>HTTP hooks</strong> POST the hook input to a URL with configurable headers and env var interpolation (only explicitly-allowed env vars are resolved — prevents leaking secrets).</p>
+
+<p><strong>Agent hooks</strong> run a full agentic verification loop (“Verify that unit tests ran and passed”) with configurable model and timeout.</p>
+
+<h3 id="222-event-matcher-hook-pipeline">22.2 Event-Matcher-Hook Pipeline</h3>
+
+<p>Hooks are configured in <code class="language-plaintext highlighter-rouge">settings.json</code> as a three-level structure:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Event → Matcher[] → Hook[]
+</code></pre></div></div>
+
+<p>Each <strong>event</strong> (PreToolUse, PostToolUse, PreMessage, PostMessage, etc.) has an array of <strong>matchers</strong> with optional permission-rule-syntax patterns (e.g., <code class="language-plaintext highlighter-rouge">"Bash(git *)"</code> — only fires for git commands). Each matcher has an array of <strong>hooks</strong> to execute.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">if</code> condition field uses the same permission rule syntax as the tool permission system, evaluated against <code class="language-plaintext highlighter-rouge">tool_name</code> and <code class="language-plaintext highlighter-rouge">tool_input</code> — so hooks can fire selectively without spawning a process for every tool call.</p>
+
+<h3 id="223-advanced-hook-features">22.3 Advanced Hook Features</h3>
+
+<ul>
+  <li><strong><code class="language-plaintext highlighter-rouge">async: true</code></strong> — Hook runs in background without blocking the model</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">asyncRewake: true</code></strong> — Runs in background but wakes the model on exit code 2 (blocking error)</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">once: true</code></strong> — Auto-removes after first execution (useful for one-time setup)</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">statusMessage</code></strong> — Custom spinner text while the hook runs</li>
+  <li><strong>Environment variable interpolation</strong> in HTTP headers with explicit allowlist</li>
+</ul>
+
+<h2 id="23-voice-mode-bridge-and-infrastructure">23. Voice Mode, Bridge, and Infrastructure</h2>
+
+<p><img src="/assets/claudecode/voice.png" alt="Claude Code voice mode and bridge architecture" /></p>
+
+<h3 id="231-voice-mode">23.1 Voice Mode</h3>
+
+<p>Claude Code includes a <strong>voice input mode</strong> (feature-flagged as <code class="language-plaintext highlighter-rouge">VOICE_MODE</code>) that allows voice-to-text interaction:</p>
+
+<ul>
+  <li>Requires Anthropic OAuth (not API keys, Bedrock, or Vertex) — uses the <code class="language-plaintext highlighter-rouge">voice_stream</code> endpoint on claude.ai</li>
+  <li>Protected by a GrowthBook kill-switch (<code class="language-plaintext highlighter-rouge">tengu_amber_quartz_disabled</code>) for emergency off</li>
+  <li>Auth check uses memoized keychain reads (~20-50ms first call, cache hit thereafter)</li>
+  <li>The <code class="language-plaintext highlighter-rouge">/voice</code> command, ConfigTool, and a <code class="language-plaintext highlighter-rouge">VoiceModeNotice</code> component all gate on <code class="language-plaintext highlighter-rouge">isVoiceModeEnabled()</code></li>
+</ul>
+
+<h3 id="232-the-bridge-system-31-files">23.2 The Bridge System (31 Files)</h3>
+
+<p>The bridge (<code class="language-plaintext highlighter-rouge">bridge/</code>) is the most substantial networking subsystem — a persistent WebSocket connection between the local CLI and claude.ai’s web interface (CCR). It enables using Claude Code from a browser while the actual tools execute locally.</p>
+
+<p><strong>Key components:</strong></p>
+<ul>
+  <li><strong><code class="language-plaintext highlighter-rouge">bridgeMain.ts</code></strong> — Main bridge loop with exponential backoff (2s initial → 2min cap → 10min give-up)</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">replBridge.ts</code> / <code class="language-plaintext highlighter-rouge">replBridgeTransport.ts</code></strong> — REPL-side bridge handle, message framing</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">bridgeApi.ts</code></strong> — API client with JWT refresh, trusted device tokens, session validation</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">bridgeMessaging.ts</code> / <code class="language-plaintext highlighter-rouge">inboundMessages.ts</code></strong> — Message adaptation (SDK format ↔ local format)</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">bridgePermissionCallbacks.ts</code></strong> — Permission request mediation between web UI and local CLI</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">sessionRunner.ts</code></strong> — Spawns agent sessions per work item, manages worktrees</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">capacityWake.ts</code></strong> — Wakes idle bridge when capacity becomes available</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">workSecret.ts</code></strong> — Encrypted work routing between bridge workers</li>
+</ul>
+
+<p>The bridge handles session lifecycle, token refresh, trusted device enrollment, and graceful reconnection — essentially a mini-RPC framework over WebSocket.</p>
+
+<h3 id="233-direct-connect">23.3 Direct Connect</h3>
+
+<p>The <code class="language-plaintext highlighter-rouge">server/</code> directory implements <strong>Direct Connect</strong> — a WebSocket-based protocol for external clients to connect to a running Claude Code instance:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nx">DirectConnectSessionManager</span> <span class="p">{</span>
+  <span class="nx">connect</span><span class="p">():</span> <span class="k">void</span>                    <span class="c1">// Open WebSocket</span>
+  <span class="nx">sendMessage</span><span class="p">(</span><span class="nx">content</span><span class="p">):</span> <span class="nx">boolean</span>      <span class="c1">// Send user message</span>
+  <span class="nx">respondToPermissionRequest</span><span class="p">(...)</span>    <span class="c1">// Handle tool permission prompts</span>
+  <span class="nx">sendInterrupt</span><span class="p">():</span> <span class="k">void</span>              <span class="c1">// Cancel current request</span>
+  <span class="nx">disconnect</span><span class="p">():</span> <span class="k">void</span>                 <span class="c1">// Close connection</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Messages are JSON-over-WebSocket using the SDK message format. Control requests (permission prompts) are forwarded to the client, which responds with allow/deny decisions. This enables IDE integrations and custom frontends.</p>
+
+<h3 id="234-upstream-proxy-ccr-security">23.4 Upstream Proxy (CCR Security)</h3>
+
+<p>When running inside a CCR container, the upstream proxy system (<code class="language-plaintext highlighter-rouge">upstreamproxy/</code>) provides secure network access:</p>
+
+<ol>
+  <li><strong>Read session token</strong> from <code class="language-plaintext highlighter-rouge">/run/ccr/session_token</code></li>
+  <li><strong>Set <code class="language-plaintext highlighter-rouge">prctl(PR_SET_DUMPABLE, 0)</code></strong> — blocks same-UID ptrace (prevents prompt-injected <code class="language-plaintext highlighter-rouge">gdb -p $PPID</code> from scraping the token off the heap)</li>
+  <li><strong>Download CA certificate</strong> and concatenate with system bundle for MITM proxy trust</li>
+  <li><strong>Start local CONNECT→WebSocket relay</strong> on a random port</li>
+  <li><strong>Unlink the token file</strong> (token stays heap-only; file is gone before the agent loop can access it)</li>
+  <li><strong>Inject <code class="language-plaintext highlighter-rouge">HTTPS_PROXY</code> / <code class="language-plaintext highlighter-rouge">SSL_CERT_FILE</code></strong> env vars for all subprocesses</li>
+</ol>
+
+<p>Every step fails open — a broken proxy never breaks an otherwise-working session. The NO_PROXY list covers loopback, RFC1918, IMDS, Anthropic API, GitHub, and package registries.</p>
+
+<h3 id="235-output-styles">23.5 Output Styles</h3>
+
+<p>The <code class="language-plaintext highlighter-rouge">outputStyles/</code> system lets users customize Claude’s response format via markdown files:</p>
+
+<ul>
+  <li>Project styles: <code class="language-plaintext highlighter-rouge">.claude/output-styles/*.md</code></li>
+  <li>User styles: <code class="language-plaintext highlighter-rouge">~/.claude/output-styles/*.md</code></li>
+  <li>Plugin styles: provided by installed plugins</li>
+</ul>
+
+<p>Each style file has frontmatter (<code class="language-plaintext highlighter-rouge">name</code>, <code class="language-plaintext highlighter-rouge">description</code>, <code class="language-plaintext highlighter-rouge">keep-coding-instructions</code>) and a prompt body that shapes how Claude formats its responses.</p>
+
+<h3 id="236-native-typescript-modules">23.6 Native TypeScript Modules</h3>
+
+<p><code class="language-plaintext highlighter-rouge">native-ts/</code> contains TypeScript bindings for performance-critical native code:</p>
+<ul>
+  <li><strong><code class="language-plaintext highlighter-rouge">yoga-layout/</code></strong> — TypeScript interface to the Yoga layout engine (flexbox calculations)</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">file-index/</code></strong> — Native file indexing for fast codebase search</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">color-diff/</code></strong> — Native color difference calculations (for theme/styling)</li>
+</ul>
+
+<h3 id="237-moreright-internal-only">23.7 Moreright (Internal-Only)</h3>
+
+<p>The <code class="language-plaintext highlighter-rouge">moreright/</code> directory contains a stub for an internal-only feature. The external build ships a no-op implementation with <code class="language-plaintext highlighter-rouge">onBeforeQuery</code>, <code class="language-plaintext highlighter-rouge">onTurnComplete</code>, and <code class="language-plaintext highlighter-rouge">render</code> all returning trivially. The real implementation is internal to Anthropic.</p>
+
+<h2 id="24-vim-mode-keybindings-and-developer-ergonomics">24. Vim Mode, Keybindings, and Developer Ergonomics</h2>
+
+<h3 id="241-vim-mode">24.1 Vim Mode</h3>
+
+<p>A full vi command system:</p>
+
+<ul>
+  <li><strong>Motions</strong> — h, j, k, l, w, b, e, 0, $, gg, G</li>
+  <li><strong>Operators</strong> — d (delete), c (change), y (yank)</li>
+  <li><strong>Text Objects</strong> — iw (inner word), ap (a paragraph)</li>
+  <li><strong>Modal State Machine</strong> — Insert, Normal, Visual modes</li>
+</ul>
+
+<p>All compiled to a single-pass command matcher for low-latency input processing.</p>
+
+<h3 id="242-dynamic-keybindings">24.2 Dynamic Keybindings</h3>
+
+<p>Context-aware keybinding resolution:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">type</span> <span class="nx">KeybindingContext</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="nx">focus</span><span class="p">?:</span> <span class="dl">'</span><span class="s1">prompt</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">file</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">terminal</span><span class="dl">'</span>
+  <span class="nx">isRecording</span><span class="p">?:</span> <span class="nx">boolean</span>
+  <span class="nx">vimMode</span><span class="p">?:</span> <span class="nx">boolean</span>
+  <span class="nx">mode</span><span class="p">?:</span> <span class="dl">'</span><span class="s1">insert</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">normal</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">visual</span><span class="dl">'</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Users can define chord bindings: <code class="language-plaintext highlighter-rouge">ctrl+k ctrl+o</code> maps to custom actions via <code class="language-plaintext highlighter-rouge">~/.claude/keybindings.json</code>.</p>
+
+<h3 id="243-debug-tools">24.3 Debug Tools</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_DEBUG_REPAINTS=1</code> — Shows component owner chain for every repaint</li>
+  <li><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_COMMIT_LOG=/tmp/commits.log</code> — Logs slow renders for profiling</li>
+  <li><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_PROFILE_STARTUP=1</code> — Full startup profiling with memory snapshots</li>
+</ul>
+
+<h2 id="25-key-engineering-patterns-and-takeaways">25. Key Engineering Patterns and Takeaways</h2>
+
+<h3 id="pattern-1-lazy-everything">Pattern 1: Lazy Everything</h3>
+
+<p>Claude Code is aggressive about deferral:</p>
+<ul>
+  <li><strong>Lazy schemas</strong> — Zod instantiation deferred via <code class="language-plaintext highlighter-rouge">lazySchema()</code></li>
+  <li><strong>Lazy commands</strong> — Module imports via <code class="language-plaintext highlighter-rouge">load()</code> functions</li>
+  <li><strong>Lazy tools</strong> — 18 tools deferred to <code class="language-plaintext highlighter-rouge">ToolSearchTool</code></li>
+  <li><strong>Lazy modules</strong> — Dynamic imports for OpenTelemetry, analytics, heavy components</li>
+  <li><strong>Lazy bundled skills</strong> — Reference files extracted on first use</li>
+</ul>
+
+<h3 id="pattern-2-memoization-by-identity">Pattern 2: Memoization by Identity</h3>
+
+<p>Key functions are memoized to prevent redundant work:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">COMMANDS()</code> — Memoized, cleared by <code class="language-plaintext highlighter-rouge">clearCommandMemoizationCaches()</code></li>
+  <li><code class="language-plaintext highlighter-rouge">loadAllCommands(cwd)</code> — Memoized by working directory</li>
+  <li><code class="language-plaintext highlighter-rouge">init()</code> — Memoized to prevent re-entrancy</li>
+</ul>
+
+<h3 id="pattern-3-feature-flags-for-dead-code-elimination">Pattern 3: Feature Flags for Dead Code Elimination</h3>
+
+<p>Bun’s <code class="language-plaintext highlighter-rouge">feature()</code> function enables compile-time dead code elimination:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="p">(</span><span class="nx">feature</span><span class="p">(</span><span class="dl">'</span><span class="s1">COORDINATOR_MODE</span><span class="dl">'</span><span class="p">))</span> <span class="p">{</span>
+  <span class="c1">// This entire block is removed from the binary when the flag is off</span>
+  <span class="kd">const</span> <span class="p">{</span> <span class="nx">CoordinatorUI</span> <span class="p">}</span> <span class="o">=</span> <span class="k">await</span> <span class="k">import</span><span class="p">(</span><span class="dl">'</span><span class="s1">./coordinator/index.js</span><span class="dl">'</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="pattern-4-interning-for-performance">Pattern 4: Interning for Performance</h3>
+
+<p>Three interning pools (chars, styles, hyperlinks) reduce memory and enable O(1) comparison by integer ID instead of string equality. The style pool even pre-computes ANSI transition sequences.</p>
+
+<h3 id="pattern-5-fail-closed-security">Pattern 5: Fail-Closed Security</h3>
+
+<p>The <code class="language-plaintext highlighter-rouge">buildTool()</code> factory provides safe defaults for 7 commonly-stubbed methods. Permissions default to “ask” — a tool must explicitly opt into auto-approval.</p>
+
+<h3 id="pattern-6-centralized-side-effects">Pattern 6: Centralized Side Effects</h3>
+
+<p><code class="language-plaintext highlighter-rouge">onChangeAppState()</code> is the single choke point for all state mutations that affect external systems. No scattered <code class="language-plaintext highlighter-rouge">useEffect</code> side effects.</p>
+
+<h3 id="pattern-7-file-based-ipc">Pattern 7: File-Based IPC</h3>
+
+<p>Multi-agent coordination uses files, not sockets:</p>
+<ul>
+  <li>Task outputs in <code class="language-plaintext highlighter-rouge">~/.claude/</code></li>
+  <li>History in <code class="language-plaintext highlighter-rouge">~/.claude/history.jsonl</code></li>
+  <li>Session transcripts for resume</li>
+  <li>Lock files with retry backoff for concurrent access</li>
+</ul>
+
+<h3 id="pattern-8-prompt-cache-stability">Pattern 8: Prompt Cache Stability</h3>
+
+<p>Tools are sorted alphabetically before being sent to the API. This keeps the tool list in the same order across requests, maximizing prompt cache hit rates.</p>
+
+<h3 id="pattern-9-progressive-disclosure">Pattern 9: Progressive Disclosure</h3>
+
+<p>The deferred tool system implements progressive disclosure at the API level:</p>
+<ul>
+  <li>Base prompt stays under 200K tokens</li>
+  <li>Model discovers additional tools on demand via <code class="language-plaintext highlighter-rouge">ToolSearchTool</code></li>
+  <li>Discovered tools are callable in the same turn</li>
+</ul>
+
+<h3 id="pattern-10-three-tier-configuration">Pattern 10: Three-Tier Configuration</h3>
+
+<p>Settings are resolved from multiple sources with clear precedence:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MDM Policy (highest) → Remote Managed → User Settings
+→ Project Config → Global Config → Defaults (lowest)
+</code></pre></div></div>
+
+<h2 id="26-conclusion">26. Conclusion</h2>
+
+<p>Claude Code is a remarkable piece of engineering. What appears to the user as a simple chat interface in the terminal is backed by:</p>
+
+<ul>
+  <li>A <strong>custom React reconciler</strong> with Yoga layout, double-buffered rendering, and hardware scroll optimization</li>
+  <li>A <strong>resilient query engine</strong> with automatic context compression, multi-strategy error recovery, and token budget continuation</li>
+  <li>A <strong>60+ tool ecosystem</strong> unified under a single generic interface with Zod validation, lazy schemas, and elastic discovery</li>
+  <li>A <strong>multi-layered permission system</strong> balancing security and developer productivity across 5 modes, rule patterns, and ML classifiers</li>
+  <li>An <strong>extensibility framework</strong> spanning skills, plugins, and MCP with 8 configuration scopes and 5 transport types</li>
+  <li><strong>Production-grade infrastructure</strong>: interned style pools, file-based IPC, sampled profiling, parallelized startup, and comprehensive telemetry</li>
+</ul>
+
+<p>The codebase demonstrates that a CLI tool can be as architecturally sophisticated as any web application — perhaps more so, given the unique constraints of terminal rendering, keyboard input ambiguity, and the need to coordinate an AI model, file system, shell, and git repository all within a single conversation loop.</p>
+
+<p>For developers building similar tools, the key lessons are:</p>
+
+<ol>
+  <li><strong>Invest in the rendering layer.</strong> Claude Code’s custom Ink framework is its competitive advantage for terminal UX.</li>
+  <li><strong>Design for failure.</strong> The multi-strategy error recovery (compaction → collapse → fallback → surface) means users almost never see raw API errors.</li>
+  <li><strong>Defer aggressively.</strong> Lazy loading at every level — schemas, modules, tools, skills — keeps startup fast and memory bounded.</li>
+  <li><strong>Intern everything.</strong> Style pools, character pools, and hyperlink pools turn O(n) string comparisons into O(1) integer comparisons.</li>
+  <li><strong>Make safety the default.</strong> Fail-closed permissions, dangerous pattern detection, and mandatory confirmation for destructive operations build user trust.</li>
+</ol>
+
+<p>Claude Code isn’t just a wrapper around an API. It’s a complete development environment that happens to run in your terminal.</p>
+
+<p><em>This analysis is based on examination of the Claude Code source code. All technical details reflect the codebase as observed at the time of analysis.</em></p>
+
+    </div>
+
+    <div class="post-clap">
+        <button class="clap-btn" id="clap-btn" aria-label="Clap for this post">
+            <svg id="clap-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8.5 9.5L6.7 7.7C6.1 7.1 6.1 6.1 6.7 5.5C7.3 4.9 8.3 4.9 8.9 5.5L14.5 11.1" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M11 7L9.5 5.5C8.9 4.9 8.9 3.9 9.5 3.3C10.1 2.7 11.1 2.7 11.7 3.3L16.5 8.1" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M13.5 5.5L12.7 4.7C12.1 4.1 12.1 3.1 12.7 2.5C13.3 1.9 14.3 1.9 14.9 2.5L18.5 6.1" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M15 7.5L15.3 7.2C15.9 6.6 16.9 6.6 17.5 7.2C18.1 7.8 18.1 8.8 17.5 9.4" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M6.5 11.5L5.2 10.2C4.6 9.6 4.6 8.6 5.2 8.0C5.8 7.4 6.8 7.4 7.4 8.0L8.5 9.1" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M17.5 9.4L18 10C20 13 19 16.5 16 19C13 21.5 9 21 7 18.5L4.5 15C3.9 14.2 4.1 13.1 4.9 12.5C5.5 12.1 6.3 12.1 6.8 12.5" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span class="clap-count" id="clap-count">0</span>
+        </button>
+    </div>
+
+    <div class="post-comments">
+        <script src="https://utteranc.es/client.js"
+            repo="sathwick-p/sathwick-p.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+        </script>
+    </div>
+</article>
+
+<script>
+(function() {
+    var FIREBASE_URL = 'https://xyz-blog-7e40e-default-rtdb.firebaseio.com';
+
+    var path = window.location.pathname.replace(/\/$/, '');
+    var parts = path.split('/');
+    var pageKey = parts[parts.length - 1].replace(/\.html$/, '') || 'index';
+
+    var btn = document.getElementById('clap-btn');
+    var countEl = document.getElementById('clap-count');
+    var icon = document.getElementById('clap-icon');
+    var storageKey = 'clapped-' + pageKey;
+
+    function setClapped() {
+        btn.classList.add('clapped');
+        var paths = icon.querySelectorAll('path');
+        for (var i = 0; i < paths.length; i++) {
+            paths[i].setAttribute('stroke', '#333');
+            paths[i].setAttribute('fill', '#333');
+            paths[i].setAttribute('fill-opacity', '0.15');
+        }
+    }
+
+    if (localStorage.getItem(storageKey)) {
+        setClapped();
+    }
+
+    fetch(FIREBASE_URL + '/claps/' + pageKey + '.json')
+        .then(function(r) { return r.json(); })
+        .then(function(count) {
+            countEl.textContent = count || 0;
+        })
+        .catch(function() {
+            countEl.textContent = '0';
+        });
+
+    btn.addEventListener('click', function() {
+        if (localStorage.getItem(storageKey)) return;
+
+        fetch(FIREBASE_URL + '/claps/' + pageKey + '.json')
+            .then(function(r) { return r.json(); })
+            .then(function(current) {
+                var newCount = (current || 0) + 1;
+                return fetch(FIREBASE_URL + '/claps/' + pageKey + '.json', {
+                    method: 'PUT',
+                    body: JSON.stringify(newCount),
+                    headers: { 'Content-Type': 'application/json' }
+                }).then(function() { return newCount; });
+            })
+            .then(function(newCount) {
+                countEl.textContent = newCount;
+                localStorage.setItem(storageKey, 'true');
+                setClapped();
+            })
+            .catch(function(err) {
+                console.error('Clap failed:', err);
+            });
+    });
+})();
+</script>
+
+<script src="https://unpkg.com/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        mediumZoom('img');
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var defines = document.querySelectorAll('.define[data-definition]');
+        var activeTooltip = null;
+        var hideTimer = null;
+        var isTouchDevice = false;
+
+        function createTooltip(el) {
+            var tooltip = document.createElement('div');
+            tooltip.className = 'define-tooltip';
+            tooltip.setAttribute('role', 'tooltip');
+
+            var term = el.getAttribute('data-term') || el.textContent;
+            var definition = el.getAttribute('data-definition');
+
+            var termEl = document.createElement('div');
+            termEl.className = 'define-tooltip-term';
+            termEl.textContent = term;
+            tooltip.appendChild(termEl);
+
+            var bodyEl = document.createElement('div');
+            bodyEl.className = 'define-tooltip-body';
+            bodyEl.textContent = definition;
+            tooltip.appendChild(bodyEl);
+
+            var closeBtn = document.createElement('button');
+            closeBtn.className = 'define-tooltip-close';
+            closeBtn.setAttribute('aria-label', 'Close tooltip');
+            closeBtn.textContent = '\u00d7';
+            closeBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                hideTooltip(tooltip);
+            });
+            tooltip.appendChild(closeBtn);
+
+            el.style.position = 'relative';
+            el.appendChild(tooltip);
+
+            var id = 'define-tip-' + Math.random().toString(36).slice(2, 9);
+            tooltip.id = id;
+            el.setAttribute('aria-describedby', id);
+
+            return tooltip;
+        }
+
+        function positionTooltip(el, tooltip) {
+            tooltip.classList.remove('is-flipped');
+
+            var rect = el.getBoundingClientRect();
+            var tooltipRect = tooltip.getBoundingClientRect();
+
+            if (rect.top - tooltipRect.height - 10 < 0) {
+                tooltip.classList.add('is-flipped');
+            }
+
+            var tooltipLeft = tooltip.offsetLeft;
+            var tooltipWidth = tooltip.offsetWidth;
+            var elRect = el.getBoundingClientRect();
+            var tooltipAbsLeft = elRect.left + elRect.width / 2 - tooltipWidth / 2;
+
+            if (tooltipAbsLeft < 8) {
+                var shift = 8 - tooltipAbsLeft;
+                tooltip.style.left = 'calc(50% + ' + shift + 'px)';
+            } else if (tooltipAbsLeft + tooltipWidth > window.innerWidth - 8) {
+                var shift = tooltipAbsLeft + tooltipWidth - (window.innerWidth - 8);
+                tooltip.style.left = 'calc(50% - ' + shift + 'px)';
+            } else {
+                tooltip.style.left = '50%';
+            }
+        }
+
+        function showTooltip(el) {
+            clearTimeout(hideTimer);
+
+            if (activeTooltip && activeTooltip !== el._tooltip) {
+                hideTooltip(activeTooltip);
+            }
+
+            if (!el._tooltip) {
+                el._tooltip = createTooltip(el);
+            }
+
+            var tooltip = el._tooltip;
+            requestAnimationFrame(function () {
+                tooltip.classList.add('is-visible');
+                positionTooltip(el, tooltip);
+            });
+            activeTooltip = tooltip;
+        }
+
+        function hideTooltip(tooltip) {
+            clearTimeout(hideTimer);
+            if (tooltip) {
+                tooltip.classList.remove('is-visible');
+                activeTooltip = null;
+            }
+        }
+
+        function scheduleHide(tooltip) {
+            clearTimeout(hideTimer);
+            hideTimer = setTimeout(function () {
+                hideTooltip(tooltip);
+            }, 200);
+        }
+
+        defines.forEach(function (el) {
+            el.setAttribute('tabindex', '0');
+            el.setAttribute('role', 'term');
+
+            el.addEventListener('mouseenter', function () {
+                if (isTouchDevice) return;
+                showTooltip(el);
+            });
+
+            el.addEventListener('mouseleave', function (e) {
+                if (isTouchDevice) return;
+                if (el._tooltip && e.relatedTarget && el._tooltip.contains(e.relatedTarget)) return;
+                scheduleHide(el._tooltip);
+            });
+
+            el.addEventListener('touchstart', function (e) {
+                isTouchDevice = true;
+                if (activeTooltip && activeTooltip === el._tooltip && activeTooltip.classList.contains('is-visible')) {
+                    hideTooltip(el._tooltip);
+                } else {
+                    showTooltip(el);
+                }
+            }, { passive: true });
+
+            el.addEventListener('focus', function () {
+                showTooltip(el);
+            });
+
+            el.addEventListener('blur', function () {
+                scheduleHide(el._tooltip);
+            });
+        });
+
+        document.addEventListener('mouseover', function (e) {
+            if (activeTooltip && activeTooltip.contains(e.target)) {
+                clearTimeout(hideTimer);
+            }
+        });
+
+        document.addEventListener('mouseout', function (e) {
+            if (activeTooltip && activeTooltip.contains(e.target)) {
+                var related = e.relatedTarget;
+                if (!activeTooltip.contains(related) && !activeTooltip.parentElement.contains(related)) {
+                    scheduleHide(activeTooltip);
+                }
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                if (activeTooltip) {
+                    hideTooltip(activeTooltip);
+                    if (document.activeElement && document.activeElement.classList.contains('define')) {
+                        document.activeElement.blur();
+                    }
+                }
+                var fs = document.querySelector('.excalidraw-embed.is-fullscreen');
+                if (fs) fs.classList.remove('is-fullscreen');
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (activeTooltip && !activeTooltip.contains(e.target) && !activeTooltip.parentElement.contains(e.target)) {
+                hideTooltip(activeTooltip);
+            }
+        });
+    });
+</script>
+
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<script>
+    // Show button when scrolling down
+    window.onscroll = function () {
+        const scrollTopBtn = document.getElementById("scrollTop");
+        if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+            scrollTopBtn.style.display = "block";
+        } else {
+            scrollTopBtn.style.display = "none";
+        }
+
+        const scrollBottomBtn = document.getElementById("scrollBottom");
+        const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+        const windowHeight = window.innerHeight;
+        const docHeight = document.documentElement.scrollHeight;
+
+        // Show button if we're not near the bottom
+        if (docHeight - (scrollTop + windowHeight) > 300) {
+            scrollBottomBtn.style.display = "block";
+        } else {
+            scrollBottomBtn.style.display = "none";
+        }
+    };
+
+    // Scroll to top when button is clicked
+    document.getElementById("scrollTop").addEventListener("click", function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Scroll to bottom when button is clicked
+    document.getElementById("scrollBottom").addEventListener("click", function () {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    });
+</script>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const content = document.querySelector(".post-content");
+        const toc = document.getElementById("post-toc");
+        const tocList = document.getElementById("post-toc-list");
+
+        if (!content) {
+            if (toc) {
+                toc.style.display = "none";
+            }
+            return;
+        }
+
+        const headings = content.querySelectorAll("h2, h3, h4, h5, h6");
+        if (!headings.length) {
+            if (toc) {
+                toc.style.display = "none";
+            }
+            return;
+        }
+
+        headings.forEach((heading) => {
+            if (!heading.id) {
+                const baseId = heading.textContent
+                    .toLowerCase()
+                    .trim()
+                    .replace(/[^\w\s-]/g, "")
+                    .replace(/\s+/g, "-");
+                let uniqueId = baseId || "section";
+                let counter = 2;
+                while (document.getElementById(uniqueId)) {
+                    uniqueId = `${baseId}-${counter}`;
+                    counter += 1;
+                }
+                heading.id = uniqueId;
+            }
+
+            if (tocList && (heading.tagName === "H2" || heading.tagName === "H3")) {
+                const item = document.createElement("li");
+                if (heading.tagName === "H3") {
+                    item.classList.add("toc-level-3");
+                }
+                const link = document.createElement("a");
+                link.href = `#${heading.id}`;
+                link.textContent = heading.textContent;
+                item.appendChild(link);
+                tocList.appendChild(item);
+            }
+
+            if (!heading.querySelector("a.heading-link")) {
+                const link = document.createElement("a");
+                link.href = `#${heading.id}`;
+                link.className = "heading-link";
+                link.innerHTML = heading.innerHTML;
+                heading.innerHTML = "";
+                heading.appendChild(link);
+            }
+        });
+
+        if (tocList && tocList.children.length === 0 && toc) {
+            toc.style.display = "none";
+        }
+    });
+</script>
+
+      </div>
+    </main>
+</body>
+
+</html>

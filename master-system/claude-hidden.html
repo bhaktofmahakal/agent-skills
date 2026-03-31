@@ -1,0 +1,1966 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Claude Code’s Hidden Features: Undocumented, Gated, and Internal Capabilities | hi i’m sathwick.</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Claude Code’s Hidden Features: Undocumented, Gated, and Internal Capabilities" />
+<meta name="author" content="sathwick.p7@gmail.com" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A source-based tour of Claude Code’s undocumented, gated, and internal features, from hidden flags and slash commands to KAIROS, ULTRAPLAN, swarms, and bridge mode." />
+<meta property="og:description" content="A source-based tour of Claude Code’s undocumented, gated, and internal features, from hidden flags and slash commands to KAIROS, ULTRAPLAN, swarms, and bridge mode." />
+<link rel="canonical" href="https://sathwick.xyz/blog/claude-hidden.html" />
+<meta property="og:url" content="https://sathwick.xyz/blog/claude-hidden.html" />
+<meta property="og:site_name" content="hi i’m sathwick." />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2026-03-31T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Claude Code’s Hidden Features: Undocumented, Gated, and Internal Capabilities" />
+<meta name="google-site-verification" content="hz4d604M-RCYPVBZQQhvBmfD5rd-ooO9QlclGJCCfUw" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"sathwick.p7@gmail.com"},"dateModified":"2026-03-31T00:00:00+00:00","datePublished":"2026-03-31T00:00:00+00:00","description":"A source-based tour of Claude Code’s undocumented, gated, and internal features, from hidden flags and slash commands to KAIROS, ULTRAPLAN, swarms, and bridge mode.","headline":"Claude Code’s Hidden Features: Undocumented, Gated, and Internal Capabilities","mainEntityOfPage":{"@type":"WebPage","@id":"https://sathwick.xyz/blog/claude-hidden.html"},"url":"https://sathwick.xyz/blog/claude-hidden.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://sathwick.xyz/feed.xml" title="hi i&apos;m sathwick." /><script>
+if(!(window.doNotTrack === "1" || navigator.doNotTrack === "1" || navigator.doNotTrack === "yes" || navigator.msDoNotTrack === "1")) {
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'G-4PW08EK754', 'auto');
+  ga('send', 'pageview');
+}
+</script>
+  
+<style>
+    /* Remove Minima default top border gap */
+    .site-header { border-top: none; }
+  </style>
+</head>
+<body><style>
+    .blog-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-left h1 {
+        margin: 0;
+        font-size: 24px;
+    }
+
+    .header-right a {
+        margin-left: 15px;
+        color: #333;
+    }
+
+    .blog-header a:hover {
+        color: #0077cc;
+    }
+</style>
+
+<header class="site-header" role="banner">
+
+  <div class="wrapper"><div class="blog-header">
+        <div class="header-left">
+            <h1>
+                <a class="site-title" rel="author" href="/">hi i&#39;m sathwick.</a>
+            </h1>
+        </div>
+        <div class="header-right">
+            <a href="/about/">About</a>
+            <a href="/tags/">Tags</a>
+            <a href="https://github.com/sathwick-p" target="_blank">GitHub</a>
+            <a href="https://x.com/saxwick" target="_blank">Twitter</a>
+            <a href="/feed.xml" title="RSS Feed">RSS</a>
+        </div>
+    </div>
+
+  </div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <link rel="stylesheet" href="/assets/fonts/style.css">
+
+<style>
+    html,
+    body {
+        font-family: 'Minion 3', serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    th {
+        padding: unset !important;
+    }
+
+    table {
+        margin-bottom: 15px;
+    }
+
+    code {
+        font-family: 'Source Code Pro', monospace;
+    }
+
+    blockquote {
+        font-style: normal;
+        letter-spacing: normal;
+    }
+
+    ol {
+        margin-top: -0.75em !important;
+        margin-block-end: 0.5em !important;
+    }
+
+    #scrollTop {
+        display: none;
+        position: fixed;
+        bottom: 90px;
+        right: 30px;
+        z-index: 100;
+        font-size: 18px;
+        border: none;
+        outline: none;
+        background-color: #333;
+        color: white;
+        cursor: pointer;
+        padding: 8px 14px;
+        border-radius: 50%;
+        transition: background-color 0.3s;
+    }
+
+    #scrollTop:hover {
+        background-color: #555;
+    }
+
+    #scrollBottom {
+        display: none;
+        position: fixed;
+        bottom: 40px;
+        right: 30px;
+        z-index: 100;
+        font-size: 18px;
+        border: none;
+        outline: none;
+        background-color: #333;
+        color: white;
+        cursor: pointer;
+        padding: 8px 14px;
+        border-radius: 50%;
+        transition: background-color 0.3s;
+    }
+
+    #scrollBottom:hover {
+        background-color: #555;
+    }
+
+    .footer-col-3 {
+        text-align: right !important;
+    }
+
+    .post-clap {
+        display: flex;
+        justify-content: center;
+        margin: 2.5rem 0 1rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e8e8e8;
+    }
+
+    .clap-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 8px;
+        transition: transform 0.15s ease;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .clap-btn:active {
+        transform: scale(1.2);
+    }
+
+    .clap-btn.clapped {
+        cursor: default;
+    }
+
+    .clap-btn svg {
+        width: 36px;
+        height: 36px;
+    }
+
+    .clap-count {
+        font-family: 'Source Code Pro', monospace;
+        font-size: 0.85rem;
+        color: #888;
+    }
+
+    .clap-btn.clapped .clap-count {
+        color: #333;
+    }
+
+    .post-comments {
+        margin: 2rem 0 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e8e8e8;
+    }
+
+    .site-header {
+        margin-top: 0;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+
+    .page-content {
+        padding-top: 1.5rem;
+    }
+
+    .post-header {
+        margin-top: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .post-title {
+        font-size: 2.25rem;
+        line-height: 1.2;
+        margin: 0 0 0.4rem 0;
+    }
+
+    .post-description {
+        margin: 0;
+        color: #666;
+        font-size: 1.05rem;
+    }
+
+    .post-meta {
+        margin: 0.4rem 0 0 0;
+        color: #888;
+        font-size: 0.9rem;
+    }
+
+    .post-tags {
+        display: inline;
+    }
+
+    .post-tags a {
+        color: #888;
+        text-decoration: none;
+        font-size: 0.85rem;
+    }
+
+    .post-tags a:hover {
+        color: #1a5fb4;
+        text-decoration: underline;
+    }
+
+    .post-toc {
+        margin: 1.5rem 0 2rem;
+        padding: 0;
+        background: none;
+        border: none;
+        border-radius: 0;
+    }
+
+    .post-toc h2 {
+        margin: 0 0 0.6rem 0;
+        font-size: 1.4rem;
+    }
+
+    .post-toc ul {
+        margin: 0;
+        padding-left: 1.2rem;
+    }
+
+    .post-toc li {
+        margin: 0.35rem 0;
+    }
+
+    .post-toc li.toc-level-3 {
+        margin-left: 1rem;
+        font-size: 0.95em;
+        list-style-type: circle;
+    }
+
+    .post-toc li {
+        color: #111;
+    }
+
+    .post-toc a {
+        color: #1a5fb4;
+        text-decoration: none;
+    }
+
+    .post-toc a:hover {
+        text-decoration: underline;
+    }
+
+    .post-content p,
+    .post-content li,
+    .post-content blockquote,
+    .post-content td,
+    .post-content th {
+        font-size: 1.0625rem;
+    }
+
+    .post-content img {
+        display: block;
+        margin: 1.5rem auto;
+        max-width: min(100%, 720px);
+        height: auto;
+    }
+
+    .post-content blockquote.twitter-tweet,
+    .post-content .twitter-tweet,
+    .post-content .twitter-tweet-rendered {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        max-width: 560px;
+    }
+
+    .post-content .twitter-tweet iframe,
+    .post-content .twitter-tweet-rendered iframe {
+        width: 100% !important;
+        max-width: 560px !important;
+    }
+
+    .heading-link {
+        color: inherit;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .heading-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Definition tooltip system */
+    .define {
+        border-bottom: 1px dotted #1a5fb4;
+        cursor: help;
+        position: relative;
+    }
+
+    .define-tooltip {
+        position: absolute;
+        bottom: calc(100% + 10px);
+        left: 50%;
+        transform: translateX(-50%);
+        width: max-content;
+        max-width: 320px;
+        background: #fafafa;
+        border: 1px solid #e8e8e8;
+        border-radius: 4px;
+        padding: 12px 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 180ms ease, visibility 180ms ease;
+        pointer-events: none;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        font-family: 'Minion 3', serif;
+        color: #111;
+        text-align: left;
+    }
+
+    .define-tooltip.is-visible {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    .define-tooltip.is-flipped {
+        bottom: auto;
+        top: calc(100% + 10px);
+    }
+
+    .define-tooltip::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: -6px;
+        border-width: 6px 6px 0;
+        border-style: solid;
+        border-color: #e8e8e8 transparent transparent;
+    }
+
+    .define-tooltip::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: -5px;
+        border-width: 6px 6px 0;
+        border-style: solid;
+        border-color: #fafafa transparent transparent;
+        z-index: 1;
+    }
+
+    .define-tooltip.is-flipped::after {
+        bottom: auto;
+        top: -6px;
+        border-width: 0 6px 6px;
+        border-color: transparent transparent #e8e8e8;
+    }
+
+    .define-tooltip.is-flipped::before {
+        bottom: auto;
+        top: -5px;
+        border-width: 0 6px 6px;
+        border-color: transparent transparent #fafafa;
+        z-index: 1;
+    }
+
+    .define-tooltip-term {
+        font-weight: 600;
+        font-size: 1.05rem;
+        margin-bottom: 4px;
+        color: #111;
+    }
+
+    .define-tooltip-body {
+        color: #333;
+        max-height: 180px;
+        overflow-y: auto;
+    }
+
+    .define-tooltip-close {
+        display: none;
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        background: none;
+        border: none;
+        font-size: 1.1rem;
+        color: #666;
+        cursor: pointer;
+        padding: 2px 6px;
+        line-height: 1;
+    }
+
+    .define-tooltip-close:hover {
+        color: #111;
+    }
+
+    @media (hover: none), (pointer: coarse) {
+        .define-tooltip-close {
+            display: block;
+        }
+    }
+
+    /* Excalidraw embed */
+    .excalidraw-embed {
+        position: relative;
+        margin: 1.5rem 0;
+        border: 1px solid #e8e8e8;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .excalidraw-embed iframe {
+        display: block;
+    }
+
+    .excalidraw-fullscreen-btn {
+        position: absolute;
+        bottom: 12px;
+        right: 12px;
+        background: #333;
+        color: #fff;
+        border: none;
+        padding: 6px 14px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-family: 'Source Code Pro', monospace;
+        cursor: pointer;
+        z-index: 10;
+        opacity: 0.8;
+        transition: opacity 0.15s;
+    }
+
+    .excalidraw-fullscreen-btn:hover {
+        opacity: 1;
+    }
+
+    .excalidraw-embed .collapse-label {
+        display: none;
+    }
+
+    .excalidraw-embed.is-fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        z-index: 9999;
+        background: #fff;
+    }
+
+    .excalidraw-embed.is-fullscreen iframe {
+        height: 100vh !important;
+    }
+
+    .excalidraw-embed.is-fullscreen .expand-label {
+        display: none;
+    }
+
+    .excalidraw-embed.is-fullscreen .collapse-label {
+        display: inline;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("a[href^='http']").forEach(function (link) {
+            link.setAttribute("target", "_blank");
+            link.setAttribute("rel", "noopener noreferrer");
+        });
+    });
+</script>
+
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            fontSize: '32px',
+            fontFamily: 'Source Code Pro',
+        }
+    });
+</script>
+
+<article class="post">
+    <header class="post-header">
+        <h1 class="post-title">Claude Code&#39;s Hidden Features: Undocumented, Gated, and Internal Capabilities</h1>
+        
+            <p class="post-description">A source-based tour of Claude Code's undocumented, gated, and internal features, from hidden flags and slash commands to KAIROS, ULTRAPLAN, swarms, and bridge mode.</p>
+        
+        <p class="post-meta">
+            March 31, 2026 · 18 min read · <span class="post-tags"><a href="/tags/#architecture">architecture</a></span>
+        </p>
+    </header>
+
+    
+
+    <div class="post-content">
+        <p><strong>Genuinely hidden, gated, or underdocumented capabilities found in the source code — things the public docs don’t cover.</strong></p>
+
+<p><em>Based on direct source inspection. “Hidden” = hidden from <code class="language-plaintext highlighter-rouge">--help</code>, feature-flagged, or dependent on non-public backends. Source presence does not guarantee your build/account has access.</em></p>
+
+<hr />
+
+<h2 id="table-of-contents">Table of Contents</h2>
+
+<ul>
+  <li><a href="#1-hidden-cli-flags">1. Hidden CLI Flags</a></li>
+  <li><a href="#2-feature-gated-slash-commands">2. Feature-Gated Slash Commands</a></li>
+  <li><a href="#3-the-buddy-system--a-full-tamagotchi-pet">3. The Buddy System — A Full Tamagotchi Pet</a></li>
+  <li><a href="#4-kairos--persistent-autonomous-assistant-mode">4. KAIROS — Persistent Autonomous Assistant Mode</a></li>
+  <li><a href="#5-auto-dream--background-memory-consolidation">5. Auto-Dream — Background Memory Consolidation</a></li>
+  <li><a href="#6-magic-docs--self-maintaining-documentation">6. Magic Docs — Self-Maintaining Documentation</a></li>
+  <li><a href="#7-ultraplan--remote-30-minute-planning-sessions">7. ULTRAPLAN — Remote 30-Minute Planning Sessions</a></li>
+  <li><a href="#8-coordinator-mode--multi-agent-swarms">8. Coordinator Mode — Multi-Agent Swarms</a></li>
+  <li><a href="#9-speculation--predictive-response-generation">9. Speculation — Predictive Response Generation</a></li>
+  <li><a href="#10-the-advisor-model-system">10. The Advisor Model System</a></li>
+  <li><a href="#11-voice-mode">11. Voice Mode</a></li>
+  <li><a href="#12-team-memory-sync">12. Team Memory Sync</a></li>
+  <li><a href="#13-remote-triggers--scheduled-cloud-agents">13. Remote Triggers — Scheduled Cloud Agents</a></li>
+  <li><a href="#14-direct-connect--cc-session-urls">14. Direct Connect — cc:// Session URLs</a></li>
+  <li><a href="#15-bridge-mode--remote-control">15. Bridge Mode &amp; Remote Control</a></li>
+  <li><a href="#16-ssh-remote-execution">16. SSH Remote Execution</a></li>
+  <li><a href="#17-mcp-channels--inbound-push-notifications">17. MCP Channels — Inbound Push Notifications</a></li>
+  <li><a href="#18-afk--auto-permission-mode">18. AFK / Auto-Permission Mode</a></li>
+  <li><a href="#19-background-sessions-detached">19. Background Sessions (Detached)</a></li>
+  <li><a href="#20-while-you-were-away-session-recaps">20. “While You Were Away” Session Recaps</a></li>
+  <li><a href="#21-tool-use-summary-generation">21. Tool-Use Summary Generation</a></li>
+  <li><a href="#22-auto-memory-extraction">22. Auto-Memory Extraction</a></li>
+  <li><a href="#23-prompt-suggestions--follow-up-generation">23. Prompt Suggestions &amp; Follow-Up Generation</a></li>
+  <li><a href="#24-deferred-tool-discovery">24. Deferred Tool Discovery</a></li>
+  <li><a href="#25-hidden-keybindings">25. Hidden Keybindings</a></li>
+  <li><a href="#26-lesser-known-environment-variables">26. Lesser-Known Environment Variables</a></li>
+  <li><a href="#27-lesser-known-settings-keys">27. Lesser-Known Settings Keys</a></li>
+  <li><a href="#28-claudemd-loading--hidden-discovery-paths">28. CLAUDE.md Loading — Hidden Discovery Paths</a></li>
+  <li><a href="#29-internal-only-commands">29. Internal-Only Commands</a></li>
+  <li><a href="#30-build-time-feature-flags">30. Build-Time Feature Flags</a></li>
+</ul>
+
+<hr />
+
+<h2 id="1-hidden-cli-flags">1. Hidden CLI Flags</h2>
+
+<p>These flags are registered with <code class="language-plaintext highlighter-rouge">.hideHelp()</code> — they work but won’t appear in <code class="language-plaintext highlighter-rouge">claude --help</code>:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>What It Does</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">--teleport</code></td>
+      <td>Upload local git state to a remote Claude Code session on claude.ai</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">--remote</code></td>
+      <td>Create a new remote session (comment in code: “undocumented until GA”)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">--remote-control</code> / <code class="language-plaintext highlighter-rouge">--rc</code></td>
+      <td>Enter bridge mode — control from claude.ai web UI (requires <code class="language-plaintext highlighter-rouge">BRIDGE_MODE</code>)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">--sdk-url</code></td>
+      <td>Connect to a custom SDK URL for direct-connect sessions</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">--channels</code></td>
+      <td>Register for MCP inbound push notifications (KAIROS builds)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">--dangerously-load-development-channels</code></td>
+      <td>Bypass MCP channel allowlist</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">--enable-auto-mode</code></td>
+      <td>AI classifier-driven auto-permission (requires <code class="language-plaintext highlighter-rouge">TRANSCRIPT_CLASSIFIER</code>)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">--advisor &lt;model&gt;</code></td>
+      <td>Attach a secondary reviewer model</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">--cowork</code></td>
+      <td>Switch plugin commands to internal cowork marketplace</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">--agent-id</code>, <code class="language-plaintext highlighter-rouge">--team-name</code>, <code class="language-plaintext highlighter-rouge">--teammate-mode</code>, <code class="language-plaintext highlighter-rouge">--agent-type</code></td>
+      <td>Swarm identity flags for multi-agent coordination</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Deprecated aliases</strong> (still work): <code class="language-plaintext highlighter-rouge">--afk</code> and <code class="language-plaintext highlighter-rouge">--dangerously-skip-permissions-with-classifiers</code> → map to <code class="language-plaintext highlighter-rouge">--enable-auto-mode</code></p>
+
+<p><strong>Correction:</strong> <code class="language-plaintext highlighter-rouge">--voice</code> is NOT a CLI flag. Voice is activated via <code class="language-plaintext highlighter-rouge">/voice</code> slash command or the <code class="language-plaintext highlighter-rouge">voiceEnabled</code> setting. <code class="language-plaintext highlighter-rouge">--brief</code> and <code class="language-plaintext highlighter-rouge">--proactive</code> are not hidden — they appear in help when their feature flags are on.</p>
+
+<hr />
+
+<h2 id="2-feature-gated-slash-commands">2. Feature-Gated Slash Commands</h2>
+
+<p>These commands exist but are conditionally registered or hidden:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Command</th>
+      <th>What It Does</th>
+      <th>Gate</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/buddy</code></td>
+      <td>Hatch and interact with a Tamagotchi-style AI pet</td>
+      <td><code class="language-plaintext highlighter-rouge">BUDDY</code> flag + date gate</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/voice</code></td>
+      <td>Toggle hold-to-talk voice dictation</td>
+      <td><code class="language-plaintext highlighter-rouge">VOICE_MODE</code> + Anthropic OAuth</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/advisor [model\|off]</code></td>
+      <td>Attach/detach a secondary reviewer model</td>
+      <td>GrowthBook <code class="language-plaintext highlighter-rouge">tengu_sage_compass</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/fast [on\|off]</code></td>
+      <td>Toggle fast inference mode</td>
+      <td>Available when fast mode is supported</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/dream</code></td>
+      <td>Manually trigger memory consolidation</td>
+      <td>Auto-memory must be enabled</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/brief</code></td>
+      <td>Toggle brief/checkpoint mode</td>
+      <td><code class="language-plaintext highlighter-rouge">KAIROS</code> or <code class="language-plaintext highlighter-rouge">KAIROS_BRIEF</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/ultraplan</code></td>
+      <td>Launch a remote 30-minute planning session</td>
+      <td><code class="language-plaintext highlighter-rouge">ULTRAPLAN</code> feature flag</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/heapdump</code></td>
+      <td>Dump JavaScript heap to <code class="language-plaintext highlighter-rouge">~/Desktop</code></td>
+      <td>Always registered, hidden</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/thinkback</code></td>
+      <td>2025 Claude Code year-in-review stats</td>
+      <td>GrowthBook <code class="language-plaintext highlighter-rouge">tengu_thinkback</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/remote-control</code> (alias <code class="language-plaintext highlighter-rouge">/rc</code>)</td>
+      <td>Enter bridge mode</td>
+      <td><code class="language-plaintext highlighter-rouge">BRIDGE_MODE</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="3-the-buddy-system--a-full-tamagotchi-pet">3. The Buddy System — A Full Tamagotchi Pet</h2>
+
+<p>A fully implemented virtual companion that lives beside your input box.</p>
+
+<p><strong>Activate:</strong> <code class="language-plaintext highlighter-rouge">/buddy</code></p>
+
+<ul>
+  <li><strong>Deterministic generation</strong> from your userId via Mulberry32 PRNG — same user = same companion across all devices</li>
+  <li><strong>18 species:</strong> duck, goose, blob, cat, dragon, octopus, owl, penguin, turtle, snail, ghost, axolotl, capybara, cactus, robot, rabbit, mushroom, chonk</li>
+  <li><strong>5 rarity tiers:</strong> common (60%), uncommon (25%), rare (10%), epic (4%), legendary (1%)</li>
+  <li><strong>6 eye styles</strong>, <strong>8 hats</strong> (commons get no hat), <strong>1% shiny chance</strong></li>
+  <li><strong>5 stats:</strong> DEBUGGING, PATIENCE, CHAOS, WISDOM, SNARK — one peak stat, one dump stat, floors scale with rarity</li>
+  <li><strong>Soul generation:</strong> On first hatch, Claude generates a unique name and personality, stored permanently</li>
+  <li><strong>ASCII sprite animation:</strong> 3 frames per species at 500ms tick — idle, fidget, and rare blink frames</li>
+  <li><strong>Speech bubbles</strong> (10 seconds, 3-second fade) and <strong><code class="language-plaintext highlighter-rouge">/buddy pet</code> hearts animation</strong> (2.5 seconds)</li>
+  <li><strong>Anti-cheat:</strong> Only the soul persists — bones (species/rarity/stats) are regenerated from userId hash every load</li>
+</ul>
+
+<p><strong>Release window:</strong> Teaser April 1-7 2026 (local dates for rolling timezone buzz). Live permanently from April 2026 onward. Always on for internal builds.</p>
+
+<hr />
+
+<h2 id="4-kairos--persistent-autonomous-assistant-mode">4. KAIROS — Persistent Autonomous Assistant Mode</h2>
+
+<p><strong>Activate:</strong> <code class="language-plaintext highlighter-rouge">--assistant</code> flag (feature-gated: <code class="language-plaintext highlighter-rouge">KAIROS</code>)</p>
+
+<p>A complete alternate UX where Claude becomes a <strong>long-lived autonomous agent</strong> persisting across sessions:</p>
+
+<ul>
+  <li><strong>Append-only daily logs</strong> at <code class="language-plaintext highlighter-rouge">~/.claude/projects/&lt;slug&gt;/memory/logs/YYYY/MM/YYYY-MM-DD.md</code></li>
+  <li><strong>15-second blocking budget</strong> — any command exceeding 15s is auto-backgrounded</li>
+  <li><strong>Proactive <code class="language-plaintext highlighter-rouge">&lt;tick&gt;</code> prompts</strong> — periodic check-ins where Claude decides what to do next or calls <code class="language-plaintext highlighter-rouge">Sleep</code></li>
+  <li><strong>Brief mode</strong> — all output through <code class="language-plaintext highlighter-rouge">SendUserMessage</code> tool (structured markdown + attachments + status), not free-form text</li>
+  <li><strong>Exclusive tools:</strong> <code class="language-plaintext highlighter-rouge">SendUserFile</code>, <code class="language-plaintext highlighter-rouge">PushNotification</code>, <code class="language-plaintext highlighter-rouge">SubscribePR</code> (GitHub webhook subscriptions), <code class="language-plaintext highlighter-rouge">SleepTool</code></li>
+  <li><strong>Midnight boundary handling</strong> — flushes transcript on date change so the dream process can find it</li>
+  <li>Nightly dreaming uses a separate disk-skill variant (distinct from the auto-dream system below)</li>
+</ul>
+
+<hr />
+
+<h2 id="5-auto-dream--background-memory-consolidation">5. Auto-Dream — Background Memory Consolidation</h2>
+
+<p>Runs <strong>automatically in the background</strong> — no user action needed.</p>
+
+<p>A forked subagent reviews your recent sessions and consolidates learnings into structured memory files.</p>
+
+<p><strong>4-phase process:</strong></p>
+<ol>
+  <li><strong>Orient</strong> — <code class="language-plaintext highlighter-rouge">ls</code> memory dir, read index, skim existing topics</li>
+  <li><strong>Gather</strong> — Check daily logs, find drifted memories, grep transcripts narrowly</li>
+  <li><strong>Consolidate</strong> — Write/update memory files, merge duplicates, convert relative dates to absolute</li>
+  <li><strong>Prune</strong> — Update MEMORY.md index (max ~25KB), remove stale pointers</li>
+</ol>
+
+<p><strong>Gates (cheapest checks first):</strong></p>
+<ul>
+  <li>Time: 24+ hours since last consolidation</li>
+  <li>Sessions: 5+ sessions since last consolidation</li>
+  <li>Lock: no other process mid-consolidation</li>
+  <li>Scan throttle: session scanning limited to every 10 minutes</li>
+</ul>
+
+<p><strong>Safety:</strong> Bash restricted to read-only commands. Users can kill from the background tasks dialog (Shift+Down).</p>
+
+<p><strong>User control:</strong> <code class="language-plaintext highlighter-rouge">autoDreamEnabled</code> setting overrides the GrowthBook gate <code class="language-plaintext highlighter-rouge">tengu_onyx_plover</code>.</p>
+
+<hr />
+
+<h2 id="6-magic-docs--self-maintaining-documentation">6. Magic Docs — Self-Maintaining Documentation</h2>
+
+<p>Files with a <code class="language-plaintext highlighter-rouge"># MAGIC DOC: &lt;title&gt;</code> first line are <strong>automatically updated by a background agent</strong>.</p>
+
+<p><strong>How to use:</strong></p>
+<ol>
+  <li>Create a markdown file with <code class="language-plaintext highlighter-rouge"># MAGIC DOC: My Topic</code> as the first line</li>
+  <li>Optionally add italic instructions on the next line</li>
+  <li>Make sure Claude reads that file during a session</li>
+  <li>A constrained background agent will update it with new learnings</li>
+</ol>
+
+<p>The agent can only edit that specific file — it cannot modify other files. This is triggered by file format, not a command.</p>
+
+<hr />
+
+<h2 id="7-ultraplan--remote-30-minute-planning-sessions">7. ULTRAPLAN — Remote 30-Minute Planning Sessions</h2>
+
+<p><strong>Activate:</strong> Type “ultraplan” in your message (keyword detection) or use <code class="language-plaintext highlighter-rouge">/ultraplan</code></p>
+
+<p>Farms out complex exploration to a <strong>remote Claude Code instance (CCR)</strong>:</p>
+
+<ol>
+  <li>Remote session created with plan mode pre-configured</li>
+  <li>CLI polls every 3 seconds for up to 30 minutes</li>
+  <li>Remote Claude explores, plans, and calls <code class="language-plaintext highlighter-rouge">ExitPlanMode</code> when ready</li>
+  <li>You approve or reject the plan <strong>in the browser</strong> (claude.ai)</li>
+  <li>Rejected plans loop back for iteration</li>
+  <li>On approval: choose “remote” (execute in cloud) or “teleport to terminal” (execute locally)</li>
+</ol>
+
+<p><strong>Smart keyword detection</strong> avoids false positives — skips occurrences inside quotes, paths, identifiers, and questions.</p>
+
+<hr />
+
+<h2 id="8-coordinator-mode--multi-agent-swarms">8. Coordinator Mode — Multi-Agent Swarms</h2>
+
+<p><strong>Activate:</strong> <code class="language-plaintext highlighter-rouge">CLAUDE_CODE_COORDINATOR_MODE=1</code></p>
+
+<p>Transforms Claude into a <strong>multi-agent orchestrator</strong>:</p>
+
+<ul>
+  <li>Master coordinator spawns workers via <code class="language-plaintext highlighter-rouge">AgentTool</code> in parallel</li>
+  <li>Workers report back as XML <code class="language-plaintext highlighter-rouge">&lt;task-notification&gt;</code> messages with status, summary, result, and token usage</li>
+  <li>Coordinator <strong>never polls</strong> — push-based completion notifications</li>
+  <li>Workers get isolated <strong>scratch directories</strong> (via <code class="language-plaintext highlighter-rouge">tengu_scratch</code> gate) for cross-worker knowledge</li>
+  <li>System prompt enforces: <em>“Never write ‘based on your findings’ — synthesize yourself”</em></li>
+  <li>4-phase workflow: Research (parallel) → Synthesis (coordinator) → Implementation → Verification</li>
+  <li>Explicit continue-vs-spawn guidance based on context overlap</li>
+</ul>
+
+<hr />
+
+<h2 id="9-speculation--predictive-response-generation">9. Speculation — Predictive Response Generation</h2>
+
+<p>While you’re still typing, Claude Code <strong>speculatively starts generating a response</strong>.</p>
+
+<ul>
+  <li>File writes go to an <strong>overlay filesystem</strong> (not your real files)</li>
+  <li>If your actual input matches the speculation boundary → overlay committed instantly</li>
+  <li>If it doesn’t match → discarded silently</li>
+  <li>Feature gate: <code class="language-plaintext highlighter-rouge">tengu_chomp_inflection</code> (GrowthBook)</li>
+  <li>Result: noticeably lower perceived latency for predictable follow-ups</li>
+</ul>
+
+<hr />
+
+<h2 id="10-the-advisor-model-system">10. The Advisor Model System</h2>
+
+<p><strong>Activate:</strong> <code class="language-plaintext highlighter-rouge">/advisor &lt;model&gt;</code> or <code class="language-plaintext highlighter-rouge">--advisor &lt;model&gt;</code></p>
+
+<p>Attaches a <strong>secondary reviewer/advisor model</strong> as a server-side tool:</p>
+
+<ul>
+  <li>Main model (e.g., Sonnet) can call a stronger model (e.g., Opus) for review</li>
+  <li>Full conversation history is forwarded when the advisor is invoked</li>
+  <li>Beta header: <code class="language-plaintext highlighter-rouge">advisor-tool-2026-03-01</code></li>
+  <li>Does NOT work on Bedrock/Vertex (they don’t support the advisor beta header)</li>
+  <li>Disable with <code class="language-plaintext highlighter-rouge">/advisor off</code> or <code class="language-plaintext highlighter-rouge">CLAUDE_CODE_DISABLE_ADVISOR_TOOL</code></li>
+  <li>GrowthBook gate: <code class="language-plaintext highlighter-rouge">tengu_sage_compass</code></li>
+</ul>
+
+<hr />
+
+<h2 id="11-voice-mode">11. Voice Mode</h2>
+
+<p><strong>Activate:</strong> <code class="language-plaintext highlighter-rouge">/voice</code> slash command or <code class="language-plaintext highlighter-rouge">voiceEnabled</code> setting</p>
+
+<ul>
+  <li>Hold-to-talk dictation (default keybinding: hold <code class="language-plaintext highlighter-rouge">space</code>)</li>
+  <li>Requires <strong>Anthropic OAuth</strong> — not available with API keys, Bedrock, or Vertex</li>
+  <li>Uses the <code class="language-plaintext highlighter-rouge">voice_stream</code> endpoint on claude.ai</li>
+  <li>Multiple audio backends: native audio, SoX, <code class="language-plaintext highlighter-rouge">arecord</code></li>
+  <li>Protected by GrowthBook kill-switch (<code class="language-plaintext highlighter-rouge">tengu_amber_quartz_disabled</code>) for emergency off</li>
+</ul>
+
+<hr />
+
+<h2 id="12-team-memory-sync">12. Team Memory Sync</h2>
+
+<p><strong>Feature-gated:</strong> <code class="language-plaintext highlighter-rouge">TEAMMEM</code></p>
+
+<p>Memories split into <strong>private</strong> (per-user) and <strong>team</strong> (shared) directories:</p>
+
+<ul>
+  <li>Team memory synced to server APIs across authenticated org members</li>
+  <li><strong>Secret scanning</strong> prevents leaking sensitive data into shared memory</li>
+  <li><strong>Optimistic locking</strong> for conflict resolution</li>
+  <li>Team memory lives at <code class="language-plaintext highlighter-rouge">.../memory/team/MEMORY.md</code></li>
+  <li>Requires first-party OAuth and org-scoped server APIs</li>
+</ul>
+
+<hr />
+
+<h2 id="13-remote-triggers--scheduled-cloud-agents">13. Remote Triggers — Scheduled Cloud Agents</h2>
+
+<p><strong>Tool:</strong> <code class="language-plaintext highlighter-rouge">RemoteTrigger</code> (deferred, discovered via ToolSearchTool)</p>
+
+<p>Create and manage <strong>scheduled remote Claude Code agents</strong> via CCR API:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">create</code> — Schedule a trigger with cron expression</li>
+  <li><code class="language-plaintext highlighter-rouge">list</code> / <code class="language-plaintext highlighter-rouge">get</code> — View triggers</li>
+  <li><code class="language-plaintext highlighter-rouge">update</code> — Modify a trigger</li>
+  <li><code class="language-plaintext highlighter-rouge">run</code> — Manually fire a trigger</li>
+</ul>
+
+<p>Requires Claude.ai OAuth. Feature gate: <code class="language-plaintext highlighter-rouge">tengu_surreal_dali</code>. Beta: <code class="language-plaintext highlighter-rouge">ccr-triggers-2026-01-30</code>.</p>
+
+<hr />
+
+<h2 id="14-direct-connect--cc-session-urls">14. Direct Connect — cc:// Session URLs</h2>
+
+<p><strong>Activate:</strong> <code class="language-plaintext highlighter-rouge">claude server</code> (when <code class="language-plaintext highlighter-rouge">DIRECT_CONNECT</code> is enabled)</p>
+
+<p>Creates shareable session URLs that external clients can connect to:</p>
+
+<ul>
+  <li>WebSocket-based protocol with SDK message format</li>
+  <li>Permission requests forwarded to connecting client</li>
+  <li>Supports interrupt/cancel signals</li>
+  <li><code class="language-plaintext highlighter-rouge">claude open cc://...</code> connects to an existing session (described as internal)</li>
+  <li>Enables custom IDE integrations and frontends</li>
+</ul>
+
+<hr />
+
+<h2 id="15-bridge-mode--remote-control">15. Bridge Mode &amp; Remote Control</h2>
+
+<p><strong>Activate:</strong> <code class="language-plaintext highlighter-rouge">--remote-control</code> / <code class="language-plaintext highlighter-rouge">--rc</code> (when <code class="language-plaintext highlighter-rouge">BRIDGE_MODE</code> compiled in)</p>
+
+<p>Persistent WebSocket connection between local CLI and claude.ai web interface:</p>
+
+<ul>
+  <li>Use Claude Code from a browser while tools execute locally</li>
+  <li>Exponential backoff reconnection (2s → 2min cap → 10min give-up)</li>
+  <li>JWT token refresh, trusted device enrollment</li>
+  <li>Permission request mediation between web UI and local CLI</li>
+  <li>31 files in the bridge subsystem — essentially a full RPC framework</li>
+</ul>
+
+<p><strong>Related settings:</strong></p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">remoteControlAtStartup</code> — auto-start bridge</li>
+  <li><code class="language-plaintext highlighter-rouge">taskCompleteNotifEnabled</code>, <code class="language-plaintext highlighter-rouge">inputNeededNotifEnabled</code>, <code class="language-plaintext highlighter-rouge">agentPushNotifEnabled</code> — push notification controls</li>
+</ul>
+
+<hr />
+
+<h2 id="16-ssh-remote-execution">16. SSH Remote Execution</h2>
+
+<p><strong>Activate:</strong> <code class="language-plaintext highlighter-rouge">claude ssh &lt;host&gt; [dir]</code> (when <code class="language-plaintext highlighter-rouge">SSH_REMOTE</code> is enabled)</p>
+
+<ul>
+  <li>Deploys Claude Code binary to a remote Linux host over SSH</li>
+  <li>API auth tunnels back through the local machine — no separate remote auth setup</li>
+  <li>Build-time feature-gated</li>
+</ul>
+
+<hr />
+
+<h2 id="17-mcp-channels--inbound-push-notifications">17. MCP Channels — Inbound Push Notifications</h2>
+
+<p><strong>Activate:</strong> <code class="language-plaintext highlighter-rouge">--channels plugin:name@marketplace</code></p>
+
+<p>Register sessions for <strong>real-time event delivery</strong> from approved MCP servers/plugins:</p>
+
+<ul>
+  <li>Allowlist controlled by GrowthBook</li>
+  <li><code class="language-plaintext highlighter-rouge">--dangerously-load-development-channels</code> bypasses the allowlist</li>
+  <li>Enables event-driven workflows (e.g., GitHub events, CI notifications)</li>
+</ul>
+
+<hr />
+
+<h2 id="18-afk--auto-permission-mode">18. AFK / Auto-Permission Mode</h2>
+
+<p><strong>Activate:</strong> <code class="language-plaintext highlighter-rouge">--enable-auto-mode</code> (hidden flag, requires <code class="language-plaintext highlighter-rouge">TRANSCRIPT_CLASSIFIER</code>)</p>
+
+<p>Classifier-assisted automatic permission decisions when the user is away:</p>
+
+<ul>
+  <li>AI model evaluates each permission request based on conversation context</li>
+  <li>Beta header: <code class="language-plaintext highlighter-rouge">afk-mode-2026-01-31</code></li>
+  <li>Deprecated aliases: <code class="language-plaintext highlighter-rouge">--afk</code>, <code class="language-plaintext highlighter-rouge">--dangerously-skip-permissions-with-classifiers</code></li>
+  <li>Designed for unattended, long-running agent workflows</li>
+</ul>
+
+<hr />
+
+<h2 id="19-background-sessions-detached">19. Background Sessions (Detached)</h2>
+
+<p><strong>Feature-gated:</strong> <code class="language-plaintext highlighter-rouge">BG_SESSIONS</code></p>
+
+<p>Run Claude Code sessions in the background with management commands:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">claude --bg</code> / <code class="language-plaintext highlighter-rouge">claude --background</code> — Start a detached session</li>
+  <li><code class="language-plaintext highlighter-rouge">claude ps</code> — List running background sessions</li>
+  <li><code class="language-plaintext highlighter-rouge">claude logs &lt;id&gt;</code> — View session logs</li>
+  <li><code class="language-plaintext highlighter-rouge">claude attach &lt;id&gt;</code> — Reattach to a session</li>
+  <li><code class="language-plaintext highlighter-rouge">claude kill &lt;id&gt;</code> — Stop a session</li>
+</ul>
+
+<hr />
+
+<h2 id="20-while-you-were-away-session-recaps">20. “While You Were Away” Session Recaps</h2>
+
+<p>When you return to a session after being away, Claude can generate a <strong>short recap card</strong> summarizing what happened.</p>
+
+<ul>
+  <li>Implemented in <code class="language-plaintext highlighter-rouge">services/awaySummary.ts</code></li>
+  <li>Produces short re-entry summaries automatically</li>
+  <li>UI-side feature, not a slash command</li>
+</ul>
+
+<hr />
+
+<h2 id="21-tool-use-summary-generation">21. Tool-Use Summary Generation</h2>
+
+<p>For SDK/mobile surfaces, raw tool batches are automatically converted into <strong>compact high-level progress summaries</strong>:</p>
+
+<ul>
+  <li>Implemented in <code class="language-plaintext highlighter-rouge">services/toolUseSummary/toolUseSummaryGenerator.ts</code></li>
+  <li>Generates short labels for completed tool batches</li>
+  <li>Used by SDK to provide progress updates to clients and mobile-like single-line rows</li>
+</ul>
+
+<hr />
+
+<h2 id="22-auto-memory-extraction">22. Auto-Memory Extraction</h2>
+
+<p>A <strong>background agent</strong> automatically extracts memories from your conversations:</p>
+
+<ul>
+  <li>Runs at end of each complete query loop (when <code class="language-plaintext highlighter-rouge">EXTRACT_MEMORIES</code> is enabled)</li>
+  <li>Uses a forked agent that shares the prompt cache</li>
+  <li>Scans existing memory files first to avoid duplicates</li>
+  <li>When the main agent writes memories directly, the background extractor skips that range</li>
+  <li>Writes to <code class="language-plaintext highlighter-rouge">~/.claude/projects/&lt;path&gt;/memory/</code></li>
+  <li>Auto-memory is enabled by default unless disabled via <code class="language-plaintext highlighter-rouge">CLAUDE_CODE_DISABLE_AUTO_MEMORY</code>, <code class="language-plaintext highlighter-rouge">--bare</code>, or settings</li>
+</ul>
+
+<hr />
+
+<h2 id="23-prompt-suggestions--follow-up-generation">23. Prompt Suggestions &amp; Follow-Up Generation</h2>
+
+<p><strong>Activate:</strong> <code class="language-plaintext highlighter-rouge">CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=1</code></p>
+
+<p>After Claude finishes a response, it can <strong>suggest what to ask next</strong>:</p>
+
+<ul>
+  <li>Feature gate: <code class="language-plaintext highlighter-rouge">tengu_chomp_inflection</code> (GrowthBook)</li>
+  <li>Env var can force on/off, otherwise GrowthBook + interactive-session checks apply</li>
+  <li>Tied to the speculation system — may pre-generate the speculative response too</li>
+</ul>
+
+<hr />
+
+<h2 id="24-deferred-tool-discovery">24. Deferred Tool Discovery</h2>
+
+<p>~18 of Claude Code’s 60+ tools are <strong>not sent to the model in every request</strong>. They’re discovered on-demand:</p>
+
+<ol>
+  <li>Model calls <code class="language-plaintext highlighter-rouge">ToolSearchTool</code> with a keyword query</li>
+  <li>Matching deferred tools’ schemas are returned</li>
+  <li>Model calls the discovered tool in the same turn</li>
+</ol>
+
+<p><strong>Query syntax:</strong></p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">select:TaskCreate,LSP</code> — Direct selection by name</li>
+  <li><code class="language-plaintext highlighter-rouge">task create</code> — Keyword search against names, descriptions, and hints</li>
+  <li><code class="language-plaintext highlighter-rouge">+slack send</code> — Require “slack” in tool name</li>
+</ul>
+
+<p><strong>Why it matters:</strong> Keeps the base prompt under 200K tokens. Without this, 60+ tool schemas would consume too much context.</p>
+
+<hr />
+
+<h2 id="25-hidden-keybindings">25. Hidden Keybindings</h2>
+
+<p>Feature-gated keybindings that only appear when their features are enabled:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Key Combo</th>
+      <th>Action</th>
+      <th>Gate</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Space</code> (hold)</td>
+      <td>Push-to-talk voice input</td>
+      <td><code class="language-plaintext highlighter-rouge">VOICE_MODE</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Ctrl+Shift+B</code></td>
+      <td>Toggle Brief mode</td>
+      <td><code class="language-plaintext highlighter-rouge">KAIROS</code> / <code class="language-plaintext highlighter-rouge">KAIROS_BRIEF</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Ctrl+Shift+F</code> / <code class="language-plaintext highlighter-rouge">Cmd+Shift+F</code></td>
+      <td>Global search</td>
+      <td><code class="language-plaintext highlighter-rouge">QUICK_SEARCH</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Ctrl+Shift+P</code> / <code class="language-plaintext highlighter-rouge">Cmd+Shift+P</code></td>
+      <td>Quick open</td>
+      <td><code class="language-plaintext highlighter-rouge">QUICK_SEARCH</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Meta+J</code></td>
+      <td>Toggle terminal panel</td>
+      <td><code class="language-plaintext highlighter-rouge">TERMINAL_PANEL</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Shift+Up</code></td>
+      <td>Message actions menu</td>
+      <td><code class="language-plaintext highlighter-rouge">MESSAGE_ACTIONS</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Ctrl+Shift+O</code></td>
+      <td>Toggle teammate preview</td>
+      <td>Teams enabled</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Always-available but often unknown:</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Key Combo</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Ctrl+X Ctrl+K</code></td>
+      <td>Kill all running agents</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Ctrl+_ </code> or <code class="language-plaintext highlighter-rouge">Ctrl+Shift+-</code></td>
+      <td>Undo</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Ctrl+X Ctrl+E</code> or <code class="language-plaintext highlighter-rouge">Ctrl+G</code></td>
+      <td>Open external editor</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Ctrl+S</code></td>
+      <td>Stash current input</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Meta+P</code></td>
+      <td>Model picker</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Meta+O</code></td>
+      <td>Fast mode toggle</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Meta+T</code></td>
+      <td>Thinking mode toggle</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Ctrl+E</code></td>
+      <td>Toggle permission explanation (in confirmation dialog)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Ctrl+D</code></td>
+      <td>Toggle permission debug info (in confirmation dialog)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>All keybindings are overridable via <code class="language-plaintext highlighter-rouge">~/.claude/keybindings.json</code>.</p>
+
+<hr />
+
+<h2 id="26-lesser-known-environment-variables">26. Lesser-Known Environment Variables</h2>
+
+<p><strong>Debug &amp; profiling:</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_PROFILE_STARTUP=1</code></td>
+      <td>Full startup profiling with memory snapshots</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_PROFILE_QUERY=1</code></td>
+      <td>Profile query pipeline timing</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_DEBUG_REPAINTS=1</code></td>
+      <td>Show component owner chain for every terminal repaint</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_PERFETTO_TRACE</code></td>
+      <td>Enable Perfetto tracing format</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_TERMINAL_RECORDING</code></td>
+      <td>Record terminal in asciinema format</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_COMMIT_LOG=/path</code></td>
+      <td>Log slow renders for profiling</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Behavioral overrides:</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC</code></td>
+      <td>Disable ALL non-essential network traffic (most restrictive privacy)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_DISABLE_AUTO_MEMORY</code></td>
+      <td>Disable automatic memory management</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_DISABLE_CRON</code></td>
+      <td>Disable cron job scheduler</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_DISABLE_FILE_CHECKPOINTING</code></td>
+      <td>Disable file snapshot backups</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_DISABLE_ADVISOR_TOOL</code></td>
+      <td>Disable advisor model</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION</code></td>
+      <td>Enable speculative next-prompt suggestions</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_MAX_OUTPUT_TOKENS</code></td>
+      <td>Override max output tokens per response</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_MAX_CONTEXT_TOKENS</code></td>
+      <td>Override max context window</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_EFFORT_LEVEL</code></td>
+      <td>Set effort: <code class="language-plaintext highlighter-rouge">low\|medium\|high\|max\|auto</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_COORDINATOR_MODE=1</code></td>
+      <td>Enable coordinator mode</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_SIMPLE</code></td>
+      <td>Same as <code class="language-plaintext highlighter-rouge">--bare</code> — skip hooks, LSP, plugins, background tasks</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CONFIG_DIR</code></td>
+      <td>Override <code class="language-plaintext highlighter-rouge">~/.claude</code> config directory</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_ENV_FILE</code></td>
+      <td>Path to env file to source on startup</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Provider switching:</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_USE_BEDROCK=1</code></td>
+      <td>Use AWS Bedrock</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_USE_VERTEX=1</code></td>
+      <td>Use Google Vertex AI</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_USE_FOUNDRY=1</code></td>
+      <td>Use Azure Foundry</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CLAUDE_CODE_CLIENT_CERT</code> / <code class="language-plaintext highlighter-rouge">CLAUDE_CODE_CLIENT_KEY</code></td>
+      <td>mTLS client certificates</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Prompt caching control:</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">DISABLE_PROMPT_CACHING</code></td>
+      <td>Disable globally</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">DISABLE_PROMPT_CACHING_HAIKU</code> / <code class="language-plaintext highlighter-rouge">_SONNET</code> / <code class="language-plaintext highlighter-rouge">_OPUS</code></td>
+      <td>Disable per model</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">DISABLE_INTERLEAVED_THINKING</code></td>
+      <td>Disable thinking blocks</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="27-lesser-known-settings-keys">27. Lesser-Known Settings Keys</h2>
+
+<p>In <code class="language-plaintext highlighter-rouge">~/.claude/settings.json</code> — things most people don’t know you can set:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>What It Does</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">apiKeyHelper</code></td>
+      <td>External command to fetch API key (e.g., <code class="language-plaintext highlighter-rouge">1password read op://vault/key</code>)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">awsCredentialExport</code></td>
+      <td>Command to export AWS credentials for Bedrock</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">env</code></td>
+      <td>Arbitrary environment variables injected into every session</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">effortLevel</code></td>
+      <td>Default effort level: <code class="language-plaintext highlighter-rouge">low\|medium\|high\|max\|auto</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">alwaysThinkingEnabled</code></td>
+      <td>Force extended thinking on every request</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">spinnerVerbs</code></td>
+      <td>Custom spinner verb list</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">spinnerTipsOverride</code></td>
+      <td>Custom tip messages during spinner</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">worktree.symlinkDirectories</code></td>
+      <td>Directories to symlink in worktrees (saves disk)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">worktree.sparsePaths</code></td>
+      <td>Git sparse-checkout paths for monorepo worktrees</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">autoMemoryDirectory</code></td>
+      <td>Custom path for memory storage</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">autoDreamEnabled</code></td>
+      <td>Enable/disable auto-dream consolidation</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">minSleepDurationMs</code></td>
+      <td>Minimum SleepTool duration</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">skipWebFetchPreflight</code></td>
+      <td>Skip WebFetch URL validation</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">disableBypassPermissionsMode</code></td>
+      <td>Prevent entering bypass mode</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">allowManagedPermissionRulesOnly</code></td>
+      <td>Enterprise: only admin-defined permission rules</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">allowManagedMcpServersOnly</code></td>
+      <td>Enterprise: only admin-defined MCP servers</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">allowManagedHooksOnly</code></td>
+      <td>Enterprise: only admin-defined hooks</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">allowedHttpHookUrls</code></td>
+      <td>URL allowlist for HTTP hooks</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">httpHookAllowedEnvVars</code></td>
+      <td>Env vars HTTP hooks can interpolate</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">remote.defaultEnvironmentId</code></td>
+      <td>Default remote environment for CCR</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">minimumVersion</code></td>
+      <td>Enforce minimum Claude Code version</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="28-claudemd-loading--hidden-discovery-paths">28. CLAUDE.md Loading — Hidden Discovery Paths</h2>
+
+<p>Beyond the standard project <code class="language-plaintext highlighter-rouge">CLAUDE.md</code>, Claude Code loads instructions from:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">~/.claude/CLAUDE.md</code> — User-level global instructions</li>
+  <li>Parent directories up to git root — all CLAUDE.md files in parent dirs are included</li>
+  <li><code class="language-plaintext highlighter-rouge">.claude/CLAUDE.md</code> — Inside the <code class="language-plaintext highlighter-rouge">.claude</code> directory</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">.claude/rules/*.md</code></strong> — Per-project rule files (all <code class="language-plaintext highlighter-rouge">.md</code> files in this directory)</li>
+  <li><code class="language-plaintext highlighter-rouge">@include</code>-style references inside memory files</li>
+</ul>
+
+<hr />
+
+<h2 id="29-internal-only-commands">29. Internal-Only Commands</h2>
+
+<p>Registered only when <code class="language-plaintext highlighter-rouge">USER_TYPE === 'ant'</code> — not in public builds:</p>
+
+<p><code class="language-plaintext highlighter-rouge">backfill-sessions</code>, <code class="language-plaintext highlighter-rouge">break-cache</code>, <code class="language-plaintext highlighter-rouge">bughunter</code>, <code class="language-plaintext highlighter-rouge">ctx_viz</code>, <code class="language-plaintext highlighter-rouge">good-claude</code>, <code class="language-plaintext highlighter-rouge">init-verifiers</code>, <code class="language-plaintext highlighter-rouge">force-snip</code>, <code class="language-plaintext highlighter-rouge">mock-limits</code>, <code class="language-plaintext highlighter-rouge">bridge-kick</code>, <code class="language-plaintext highlighter-rouge">subscribe-pr</code>, <code class="language-plaintext highlighter-rouge">reset-limits</code>, <code class="language-plaintext highlighter-rouge">share</code>, <code class="language-plaintext highlighter-rouge">ant-trace</code>, <code class="language-plaintext highlighter-rouge">perf-issue</code>, <code class="language-plaintext highlighter-rouge">env</code>, <code class="language-plaintext highlighter-rouge">oauth-refresh</code>, <code class="language-plaintext highlighter-rouge">debug-tool-call</code>, <code class="language-plaintext highlighter-rouge">agents-platform</code>, <code class="language-plaintext highlighter-rouge">autofix-pr</code>, <code class="language-plaintext highlighter-rouge">onboarding</code></p>
+
+<hr />
+
+<h2 id="30-build-time-feature-flags">30. Build-Time Feature Flags</h2>
+
+<p>Compile-time flags via <code class="language-plaintext highlighter-rouge">feature()</code> from <code class="language-plaintext highlighter-rouge">bun:bundle</code>. When off, code is <strong>eliminated entirely</strong> from the binary:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Feature</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">COORDINATOR_MODE</code></td>
+      <td>Multi-agent coordinator</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">VOICE_MODE</code></td>
+      <td>Voice input</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">KAIROS</code> / <code class="language-plaintext highlighter-rouge">KAIROS_BRIEF</code></td>
+      <td>Persistent assistant mode</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">PROACTIVE</code></td>
+      <td>Autonomous mode</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">BRIDGE_MODE</code></td>
+      <td>Remote control bridge</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">SSH_REMOTE</code></td>
+      <td>SSH remote execution</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">DIRECT_CONNECT</code></td>
+      <td><code class="language-plaintext highlighter-rouge">cc://</code> URL handling</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">BG_SESSIONS</code></td>
+      <td>Background sessions</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TEMPLATES</code></td>
+      <td>Template/new/reply flows</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TEAMMEM</code></td>
+      <td>Team memory sync</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TRANSCRIPT_CLASSIFIER</code></td>
+      <td>AI permission classification</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">BUDDY</code></td>
+      <td>Tamagotchi pet</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ULTRAPLAN</code></td>
+      <td>Remote planning</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">EXTRACT_MEMORIES</code></td>
+      <td>Auto-memory extraction</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">WORKFLOW_SCRIPTS</code></td>
+      <td>Workflow automation</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">QUICK_SEARCH</code></td>
+      <td>Quick search (Ctrl+Shift+F)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TERMINAL_PANEL</code></td>
+      <td>Terminal panel (Meta+J)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MESSAGE_ACTIONS</code></td>
+      <td>Message action menu (Shift+Up)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CONTEXT_COLLAPSE</code></td>
+      <td>Context collapse optimization</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">HISTORY_SNIP</code></td>
+      <td>History snipping</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_SKILLS</code></td>
+      <td>MCP skill discovery</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">DAEMON</code></td>
+      <td>Long-running daemon</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<p><em>Compiled from static analysis of the Claude Code source. Corrections applied from the audited version. Features behind flags may not be in your build.</em></p>
+
+    </div>
+
+    <div class="post-clap">
+        <button class="clap-btn" id="clap-btn" aria-label="Clap for this post">
+            <svg id="clap-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8.5 9.5L6.7 7.7C6.1 7.1 6.1 6.1 6.7 5.5C7.3 4.9 8.3 4.9 8.9 5.5L14.5 11.1" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M11 7L9.5 5.5C8.9 4.9 8.9 3.9 9.5 3.3C10.1 2.7 11.1 2.7 11.7 3.3L16.5 8.1" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M13.5 5.5L12.7 4.7C12.1 4.1 12.1 3.1 12.7 2.5C13.3 1.9 14.3 1.9 14.9 2.5L18.5 6.1" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M15 7.5L15.3 7.2C15.9 6.6 16.9 6.6 17.5 7.2C18.1 7.8 18.1 8.8 17.5 9.4" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M6.5 11.5L5.2 10.2C4.6 9.6 4.6 8.6 5.2 8.0C5.8 7.4 6.8 7.4 7.4 8.0L8.5 9.1" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M17.5 9.4L18 10C20 13 19 16.5 16 19C13 21.5 9 21 7 18.5L4.5 15C3.9 14.2 4.1 13.1 4.9 12.5C5.5 12.1 6.3 12.1 6.8 12.5" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span class="clap-count" id="clap-count">0</span>
+        </button>
+    </div>
+
+    <div class="post-comments">
+        <script src="https://utteranc.es/client.js"
+            repo="sathwick-p/sathwick-p.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+        </script>
+    </div>
+</article>
+
+<script>
+(function() {
+    var FIREBASE_URL = 'https://xyz-blog-7e40e-default-rtdb.firebaseio.com';
+
+    var path = window.location.pathname.replace(/\/$/, '');
+    var parts = path.split('/');
+    var pageKey = parts[parts.length - 1].replace(/\.html$/, '') || 'index';
+
+    var btn = document.getElementById('clap-btn');
+    var countEl = document.getElementById('clap-count');
+    var icon = document.getElementById('clap-icon');
+    var storageKey = 'clapped-' + pageKey;
+
+    function setClapped() {
+        btn.classList.add('clapped');
+        var paths = icon.querySelectorAll('path');
+        for (var i = 0; i < paths.length; i++) {
+            paths[i].setAttribute('stroke', '#333');
+            paths[i].setAttribute('fill', '#333');
+            paths[i].setAttribute('fill-opacity', '0.15');
+        }
+    }
+
+    if (localStorage.getItem(storageKey)) {
+        setClapped();
+    }
+
+    fetch(FIREBASE_URL + '/claps/' + pageKey + '.json')
+        .then(function(r) { return r.json(); })
+        .then(function(count) {
+            countEl.textContent = count || 0;
+        })
+        .catch(function() {
+            countEl.textContent = '0';
+        });
+
+    btn.addEventListener('click', function() {
+        if (localStorage.getItem(storageKey)) return;
+
+        fetch(FIREBASE_URL + '/claps/' + pageKey + '.json')
+            .then(function(r) { return r.json(); })
+            .then(function(current) {
+                var newCount = (current || 0) + 1;
+                return fetch(FIREBASE_URL + '/claps/' + pageKey + '.json', {
+                    method: 'PUT',
+                    body: JSON.stringify(newCount),
+                    headers: { 'Content-Type': 'application/json' }
+                }).then(function() { return newCount; });
+            })
+            .then(function(newCount) {
+                countEl.textContent = newCount;
+                localStorage.setItem(storageKey, 'true');
+                setClapped();
+            })
+            .catch(function(err) {
+                console.error('Clap failed:', err);
+            });
+    });
+})();
+</script>
+
+<script src="https://unpkg.com/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        mediumZoom('img');
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var defines = document.querySelectorAll('.define[data-definition]');
+        var activeTooltip = null;
+        var hideTimer = null;
+        var isTouchDevice = false;
+
+        function createTooltip(el) {
+            var tooltip = document.createElement('div');
+            tooltip.className = 'define-tooltip';
+            tooltip.setAttribute('role', 'tooltip');
+
+            var term = el.getAttribute('data-term') || el.textContent;
+            var definition = el.getAttribute('data-definition');
+
+            var termEl = document.createElement('div');
+            termEl.className = 'define-tooltip-term';
+            termEl.textContent = term;
+            tooltip.appendChild(termEl);
+
+            var bodyEl = document.createElement('div');
+            bodyEl.className = 'define-tooltip-body';
+            bodyEl.textContent = definition;
+            tooltip.appendChild(bodyEl);
+
+            var closeBtn = document.createElement('button');
+            closeBtn.className = 'define-tooltip-close';
+            closeBtn.setAttribute('aria-label', 'Close tooltip');
+            closeBtn.textContent = '\u00d7';
+            closeBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                hideTooltip(tooltip);
+            });
+            tooltip.appendChild(closeBtn);
+
+            el.style.position = 'relative';
+            el.appendChild(tooltip);
+
+            var id = 'define-tip-' + Math.random().toString(36).slice(2, 9);
+            tooltip.id = id;
+            el.setAttribute('aria-describedby', id);
+
+            return tooltip;
+        }
+
+        function positionTooltip(el, tooltip) {
+            tooltip.classList.remove('is-flipped');
+
+            var rect = el.getBoundingClientRect();
+            var tooltipRect = tooltip.getBoundingClientRect();
+
+            if (rect.top - tooltipRect.height - 10 < 0) {
+                tooltip.classList.add('is-flipped');
+            }
+
+            var tooltipLeft = tooltip.offsetLeft;
+            var tooltipWidth = tooltip.offsetWidth;
+            var elRect = el.getBoundingClientRect();
+            var tooltipAbsLeft = elRect.left + elRect.width / 2 - tooltipWidth / 2;
+
+            if (tooltipAbsLeft < 8) {
+                var shift = 8 - tooltipAbsLeft;
+                tooltip.style.left = 'calc(50% + ' + shift + 'px)';
+            } else if (tooltipAbsLeft + tooltipWidth > window.innerWidth - 8) {
+                var shift = tooltipAbsLeft + tooltipWidth - (window.innerWidth - 8);
+                tooltip.style.left = 'calc(50% - ' + shift + 'px)';
+            } else {
+                tooltip.style.left = '50%';
+            }
+        }
+
+        function showTooltip(el) {
+            clearTimeout(hideTimer);
+
+            if (activeTooltip && activeTooltip !== el._tooltip) {
+                hideTooltip(activeTooltip);
+            }
+
+            if (!el._tooltip) {
+                el._tooltip = createTooltip(el);
+            }
+
+            var tooltip = el._tooltip;
+            requestAnimationFrame(function () {
+                tooltip.classList.add('is-visible');
+                positionTooltip(el, tooltip);
+            });
+            activeTooltip = tooltip;
+        }
+
+        function hideTooltip(tooltip) {
+            clearTimeout(hideTimer);
+            if (tooltip) {
+                tooltip.classList.remove('is-visible');
+                activeTooltip = null;
+            }
+        }
+
+        function scheduleHide(tooltip) {
+            clearTimeout(hideTimer);
+            hideTimer = setTimeout(function () {
+                hideTooltip(tooltip);
+            }, 200);
+        }
+
+        defines.forEach(function (el) {
+            el.setAttribute('tabindex', '0');
+            el.setAttribute('role', 'term');
+
+            el.addEventListener('mouseenter', function () {
+                if (isTouchDevice) return;
+                showTooltip(el);
+            });
+
+            el.addEventListener('mouseleave', function (e) {
+                if (isTouchDevice) return;
+                if (el._tooltip && e.relatedTarget && el._tooltip.contains(e.relatedTarget)) return;
+                scheduleHide(el._tooltip);
+            });
+
+            el.addEventListener('touchstart', function (e) {
+                isTouchDevice = true;
+                if (activeTooltip && activeTooltip === el._tooltip && activeTooltip.classList.contains('is-visible')) {
+                    hideTooltip(el._tooltip);
+                } else {
+                    showTooltip(el);
+                }
+            }, { passive: true });
+
+            el.addEventListener('focus', function () {
+                showTooltip(el);
+            });
+
+            el.addEventListener('blur', function () {
+                scheduleHide(el._tooltip);
+            });
+        });
+
+        document.addEventListener('mouseover', function (e) {
+            if (activeTooltip && activeTooltip.contains(e.target)) {
+                clearTimeout(hideTimer);
+            }
+        });
+
+        document.addEventListener('mouseout', function (e) {
+            if (activeTooltip && activeTooltip.contains(e.target)) {
+                var related = e.relatedTarget;
+                if (!activeTooltip.contains(related) && !activeTooltip.parentElement.contains(related)) {
+                    scheduleHide(activeTooltip);
+                }
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                if (activeTooltip) {
+                    hideTooltip(activeTooltip);
+                    if (document.activeElement && document.activeElement.classList.contains('define')) {
+                        document.activeElement.blur();
+                    }
+                }
+                var fs = document.querySelector('.excalidraw-embed.is-fullscreen');
+                if (fs) fs.classList.remove('is-fullscreen');
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (activeTooltip && !activeTooltip.contains(e.target) && !activeTooltip.parentElement.contains(e.target)) {
+                hideTooltip(activeTooltip);
+            }
+        });
+    });
+</script>
+
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<script>
+    // Show button when scrolling down
+    window.onscroll = function () {
+        const scrollTopBtn = document.getElementById("scrollTop");
+        if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+            scrollTopBtn.style.display = "block";
+        } else {
+            scrollTopBtn.style.display = "none";
+        }
+
+        const scrollBottomBtn = document.getElementById("scrollBottom");
+        const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+        const windowHeight = window.innerHeight;
+        const docHeight = document.documentElement.scrollHeight;
+
+        // Show button if we're not near the bottom
+        if (docHeight - (scrollTop + windowHeight) > 300) {
+            scrollBottomBtn.style.display = "block";
+        } else {
+            scrollBottomBtn.style.display = "none";
+        }
+    };
+
+    // Scroll to top when button is clicked
+    document.getElementById("scrollTop").addEventListener("click", function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Scroll to bottom when button is clicked
+    document.getElementById("scrollBottom").addEventListener("click", function () {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    });
+</script>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const content = document.querySelector(".post-content");
+        const toc = document.getElementById("post-toc");
+        const tocList = document.getElementById("post-toc-list");
+
+        if (!content) {
+            if (toc) {
+                toc.style.display = "none";
+            }
+            return;
+        }
+
+        const headings = content.querySelectorAll("h2, h3, h4, h5, h6");
+        if (!headings.length) {
+            if (toc) {
+                toc.style.display = "none";
+            }
+            return;
+        }
+
+        headings.forEach((heading) => {
+            if (!heading.id) {
+                const baseId = heading.textContent
+                    .toLowerCase()
+                    .trim()
+                    .replace(/[^\w\s-]/g, "")
+                    .replace(/\s+/g, "-");
+                let uniqueId = baseId || "section";
+                let counter = 2;
+                while (document.getElementById(uniqueId)) {
+                    uniqueId = `${baseId}-${counter}`;
+                    counter += 1;
+                }
+                heading.id = uniqueId;
+            }
+
+            if (tocList && (heading.tagName === "H2" || heading.tagName === "H3")) {
+                const item = document.createElement("li");
+                if (heading.tagName === "H3") {
+                    item.classList.add("toc-level-3");
+                }
+                const link = document.createElement("a");
+                link.href = `#${heading.id}`;
+                link.textContent = heading.textContent;
+                item.appendChild(link);
+                tocList.appendChild(item);
+            }
+
+            if (!heading.querySelector("a.heading-link")) {
+                const link = document.createElement("a");
+                link.href = `#${heading.id}`;
+                link.className = "heading-link";
+                link.innerHTML = heading.innerHTML;
+                heading.innerHTML = "";
+                heading.appendChild(link);
+            }
+        });
+
+        if (tocList && tocList.children.length === 0 && toc) {
+            toc.style.display = "none";
+        }
+    });
+</script>
+
+      </div>
+    </main>
+</body>
+
+</html>
