@@ -50,7 +50,7 @@ bash skills.sh install --mode global --all
 
 ### Agent Development
 
-1. `master-system` - Complete system specification
+1. `master-system` - Complete system specification help to build your own agents.
 
 ## `skills.sh` Usage
 
